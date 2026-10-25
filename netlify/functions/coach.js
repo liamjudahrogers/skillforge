@@ -8,7 +8,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { message } = JSON.parse(event.body || "{}");
+    const { message, messages, profile } = JSON.parse(event.body || "{}");
 
     if (!message || typeof message !== "string") {
       return {

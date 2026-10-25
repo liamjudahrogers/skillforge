@@ -36,7 +36,12 @@ exports.handler = async (event) => {
         model: "gpt-4.1-mini",
         instructions:
           "You are SkillForge AI, a supportive calisthenics coach. Give practical, safe, age-appropriate guidance on skills such as planche, handstands, muscle-ups, and front levers. Emphasize good technique, gradual progress, rest, and injury prevention. Ask clarifying questions when needed.",
-        input: message,
+        input: [
+  {
+    role: "user",
+    content: `Training profile: ${JSON.stringify(profile || {})}\n\nRecent conversation: ${JSON.stringify(messages || [])}\n\nCurrent question: ${message}`
+  }
+],
       }),
     });
 

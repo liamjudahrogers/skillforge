@@ -104,23 +104,129 @@ const plan=[
 function loadState(){try{return {...defaultState,...JSON.parse(safeRead()||"{}")}}catch(e){return {...defaultState}}}
 function persist(){safeWrite(JSON.stringify(state))}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function start(){state.profile={goal:$("goal").value,level:$("level").value,days:$("days").value,equipment:$("equipment").value,priority:$("priority").value,pullups:$("pullups").value,dips:$("dips").value,recovery:$("recovery").value};state.selectedDay=0;persist();showDashboard()}
-function showDashboard(){if(!state.profile)return;$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory()}
-function activePlan(){
-  const mode=state.weekAdjustment||"steady";
-  return plan.map((day)=>({...day,items:day.items.map(([name,dose])=>{
-    if(mode==="easy" && !/warm|mobility|cooldown|stretch/i.test(name)) dose=dose.replace(/^(\d+) ×/,(_,n)=>`${Math.max(2,Number(n)-1)} ×`);
-    if(mode==="progress" && /planche|pull-ups|push-ups|pike push-ups|handstand|hollow-body|inverted rows/i.test(name)){
-      dose=dose.replace(/^(\d+) × (\d+)–(\d+)/,(_,sets,lo,hi)=>`${sets} × ${Number(lo)+1}–${Number(hi)+1}`);
-      dose=dose.replace(/^(\d+) × (\d+)–(\d+) sec/,(_,sets,lo,hi)=>`${sets} × ${Number(lo)+2}–${Number(hi)+2} sec`);
+
+
+async function start() {
+  state.profile = {
+    goal: $("goal").value,
+    level: $("level").value,
+    days: $("days").value,
+    equipment: $("equipment").value,
+    priority: $("priority").value,
+    pullups: $("pullups").value,
+    dips: $("dips").value,
+    recovery: $("recovery").value
+  };
+
+  state.selectedDay = 0;
+  persist();
+  showDashboard();
+
+  $("welcome").textContent = "Building your personalized plan...";
+
+  try {
+    const response = await fetch("/.netlify/functions/coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "generate_plan",
+        profile: state.profile,
+        recentLogs: state.logs || [],
+        energy: state.energy || "normal",
+        weekAdjustment: state.weekAdjustment || "steady"
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !Array.isArray(data.plan) || !data.plan.length) {
+      throw new Error(data.error || "Plan generation failed.");
     }
-    return [name,dose];
-  }),effort:mode==="easy"?(day.day==="Wed"?"Light":"Easy"):day.effort}));
+
+    state.generatedPlan = data.plan.map((day, index) => ({
+      day: `Day ${index + 1}`,
+      name: day.name || `Session ${index + 1}`,
+      focus: day.focus || "Personalized training",
+      effort: "Moderate",
+      items: (day.exercises || []).map(ex => [
+        ex.name,
+        `${ex.sets || 3} × ${ex.reps || "6-8"} · Rest ${ex.restSeconds ?? 90}s${ex.cues ? " · " + ex.cues : ""}`
+      ])
+    }));
+
+    if (state.generatedPlan.some(day => day.items.length === 0)) {
+      throw new Error("The generated plan contained an empty workout. Please try again.");
+    }
+
+    state.selectedDay = 0;
+    persist();
+
+    $("welcome").textContent = "Your personalized plan is ready!";
+    renderDays();
+    renderSession();
+    renderWeek();
+
+  } catch (error) {
+    console.error("Plan generation error:", error);
+    $("welcome").textContent =
+      "Couldn't generate your plan right now. Your saved profile is safe—please try again.";
+  }
 }
+function showDashboard(){if(!state.profile)return;$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory()}
+
+function activePlan(){
+  const source = state.generatedPlan || plan;
+  const mode = state.weekAdjustment || "steady";
+
+  return source.map((day) => ({
+    ...day,
+    items: day.items.map(([name, dose]) => {
+      if (mode === "easy" && !/warm|mobility|cooldown|stretch/i.test(name)) {
+        dose = dose.replace(
+          /^(\d+) ×/,
+          (_, n) => `${Math.max(2, Number(n) - 1)} ×`
+        );
+      }
+
+      if (
+        mode === "progress" &&
+        /planche|pull-ups|push-ups|pike push-ups|handstand|hollow-body|inverted rows/i.test(name)
+      ) {
+        dose = dose.replace(
+          /^(\d+) × (\d+)–(\d+)/,
+          (_, sets, lo, hi) =>
+            `${sets} × ${Number(lo) + 1}–${Number(hi) + 1}`
+        );
+
+        dose = dose.replace(
+          /^(\d+) × (\d+)–(\d+) sec/,
+          (_, sets, lo, hi) =>
+            `${sets} × ${Number(lo) + 2}–${Number(hi) + 2} sec`
+        );
+      }
+
+      return [name, dose];
+    }),
+    effort:
+      mode === "easy"
+        ? (day.day === "Wed" ? "Light" : "Easy")
+        : day.effort
+  }));
+}
+
 function renderStats(){$("totalWorkouts").textContent=state.logs.length;$("totalMinutes").textContent=state.logs.reduce((a,l)=>a+(+l.duration||0),0);$("totalExercises").textContent=Object.values(state.checks).reduce((a,arr)=>a+arr.length,0)}
 function renderDays(){const current=activePlan();$("dayButtons").innerHTML=current.map((d,i)=>`<button class="daybtn ${i===state.selectedDay?'active':''}" data-day="${i}">${d.day}</button>`).join("");$("dayButtons").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.selectedDay=+b.dataset.day;persist();renderDays();renderSession()})}
 function renderSession(){const w=activePlan()[state.selectedDay],key=w.day;const checked=state.checks[key]||[];$("sessionTitle").textContent=w.name;$("sessionFocus").textContent=w.focus;$("effortTag").textContent=w.effort;$("effortTag").className="tag "+(w.effort==="Light"?"easy":"");$("exerciseList").innerHTML=w.items.map((it,i)=>`<label class="exercise"><input type="checkbox" data-check="${i}" ${checked.includes(i)?"checked":""}><span class="desc"><strong>${esc(it[0])}</strong><small>${esc(it[1])}</small></span></label>`).join("");$("exerciseList").querySelectorAll("input").forEach(box=>box.onchange=()=>{const arr=new Set(state.checks[key]||[]);box.checked?arr.add(+box.dataset.check):arr.delete(+box.dataset.check);state.checks[key]=[...arr];persist();updateBar();renderStats()});updateBar();$("saveMessage").textContent=""}
-function updateBar(){const w=plan[state.selectedDay],n=(state.checks[w.day]||[]).length;$("sessionBar").style.width=(n/w.items.length*100)+"%";$("sessionCount").textContent=`${n} of ${w.items.length} exercises checked off`}
+function updateBar(){
+  const w = activePlan()[state.selectedDay];
+  const n = (state.checks[w.day] || []).length;
+
+  $("sessionBar").style.width =
+    (w.items.length ? n / w.items.length * 100 : 0) + "%";
+
+  $("sessionCount").textContent =
+    `${n} of ${w.items.length} exercises checked off`;
+}
 function renderWeek(){const current=activePlan();$("weekList").innerHTML=current.map((w,i)=>`<div class="history"><div class="row"><div><span class="eyebrow">${w.day.toUpperCase()} · ${w.effort.toUpperCase()}</span><h3>${w.name}</h3><p class="muted" style="margin:0">${w.focus}</p></div><button class="secondary smallbtn" data-open-day="${i}">View session</button></div></div>`).join("")+`<div class="notice" style="margin-top:14px">Saturday and Sunday are recovery days. Adjust the plan to your energy, technique, and schedule.</div>`;$("weekList").querySelectorAll("[data-open-day]").forEach(b=>b.onclick=()=>{state.selectedDay=+b.dataset.openDay;persist();renderDays();renderSession();switchTab("today")})}
 function renderProgress(){
   const total=state.logs.length, minutes=state.logs.reduce((a,l)=>a+(+l.duration||0),0), exercises=state.logs.reduce((a,l)=>a+(+l.completed||0),0);

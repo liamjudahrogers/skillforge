@@ -47,14 +47,16 @@ exports.handler = async (event) => {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      console.error("OpenAI API error:", data);
-      return {
-        statusCode: 502,
-        body: JSON.stringify({ error: "The AI service returned an error." }),
-      };
-    }
-
+   if (!response.ok) {
+  console.error("OpenAI API error:", data);
+  return {
+    statusCode: 502,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      error: data?.error?.message || "The AI service returned an error.",
+    }),
+  };
+}
     const reply =
       data.output
         ?.flatMap((item) => item.content || [])

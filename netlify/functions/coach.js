@@ -63,7 +63,7 @@ COACHING RULES
 - Do not diagnose injuries or medical conditions.
 
 RESPONSE STYLE
-Be friendly, encouraging, direct, and specific. Explain what to do, how to do it, and when to progress. Keep simple answers concise and use structured plans for complex requests. Never claim to have watched a video or assessed form unless the relevant video or information was actually provided.`,`
+Be friendly, encouraging, direct, and specific. Explain what to do, how to do it, and when to progress. Keep simple answers concise and use structured plans for complex requests. Never claim to have watched a video or assessed form unless the relevant video or information was actually provided.`,
         input: [
   {
     role: "user",

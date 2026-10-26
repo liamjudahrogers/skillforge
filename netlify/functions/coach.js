@@ -8,8 +8,12 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { message, messages, profile } = JSON.parse(event.body || "{}");
-
+    const {
+  message,
+  profile,
+  messages,
+  action = "chat",
+} = JSON.parse(event.body || "{}");
     if (!message || typeof message !== "string") {
       return {
         statusCode: 400,

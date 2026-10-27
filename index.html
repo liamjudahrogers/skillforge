@@ -166,10 +166,11 @@ async function generatePlanForSavedProfile() {
     renderDays();
     renderSession();
     renderWeek();
-  } catch (error) {
-    console.error("Plan generation error:", error);
-    $("welcome").textContent =
-      "Couldn't generate your plan right now. Your saved profile is safe—please try again.";
+ } catch (error) {
+  console.error("Plan generation error:", error);
+
+  $("welcome").textContent = "Let's try that again.";
+  $("planError").classList.remove("hidden");
   }
 }
 
@@ -261,6 +262,10 @@ function renderHistory(){if(!state.logs.length){$("history").innerHTML='<div cla
 function switchTab(tab){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("hidden"));$("tab-"+tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.classList.toggle("secondary",b.dataset.tab!==tab)});if(tab==="progress"){renderHistory();renderProgress()}}
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("startBtn").onclick=start;
+$("retryPlanBtn").onclick = async () => {
+  $("planError").classList.add("hidden");
+  await generatePlanForSavedProfile();
+};
 $("saveWorkout").onclick=()=>{const w=activePlan()[state.selectedDay],completed=(state.checks[w.day]||[]).length;if(!completed){$("saveMessage").textContent="Check off at least one exercise before saving.";return}const duration=Math.max(1,Math.min(300,Number($("duration").value)||35));state.logs.push({name:w.name,date:new Date().toLocaleDateString(),ts:Date.now(),duration,completed,total:w.items.length});persist();renderStats();renderHistory();renderProgress();$("saveMessage").textContent="Session saved on this device. Nice work!";};
 const coachMessages=[];
 function addChatMessage(role,content,extra=""){const feed=$("chatFeed"),node=document.createElement("div");node.className="chat-msg "+role+(extra?" "+extra:"");node.textContent=content;feed.appendChild(node);feed.scrollTop=feed.scrollHeight;return node}

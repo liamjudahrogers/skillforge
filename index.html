@@ -209,7 +209,7 @@ function activePlan(){
         /planche|pull-ups|push-ups|pike push-ups|handstand|hollow-body|inverted rows/i.test(name)
       ) {
         dose = dose.replace(
-          /^(\d+) × (\d+)–(\d+)/,
+  /^(\d+) × (\d+)[–-](\d+)/,
           (_, sets, lo, hi) =>
             `${sets} × ${Number(lo) + 1}–${Number(hi) + 1}`
         );

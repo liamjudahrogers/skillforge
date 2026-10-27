@@ -222,18 +222,54 @@ ${message}`;
         };
       }
 
-      if (
-        !generated ||
-        !Array.isArray(generated.plan) ||
-        generated.plan.length === 0 ||
-        !generated.plan.every(
-          (day) =>
-            day &&
-            typeof day.day === "string" &&
-            typeof day.name === "string" &&
-            Array.isArray(day.exercises)
-        )
-      ) {
+      
+const requestedDays = Number.parseInt(profile.days, 10);
+
+const validPlan =
+  generated &&
+  Array.isArray(generated.plan) &&
+  generated.plan.length > 0 &&
+  (
+    !Number.isInteger(requestedDays) ||
+    generated.plan.length === requestedDays
+  ) &&
+  generated.plan.every(
+    (day) =>
+      day &&
+      typeof day.day === "string" &&
+      typeof day.name === "string" &&
+      typeof day.focus === "string" &&
+      Array.isArray(day.exercises) &&
+      day.exercises.length > 0 &&
+      day.exercises.every(
+        (exercise) =>
+          exercise &&
+          typeof exercise.name === "string" &&
+          exercise.name.trim().length > 0 &&
+          Number.isInteger(Number(exercise.sets)) &&
+          Number(exercise.sets) >= 1 &&
+          Number(exercise.sets) <= 10 &&
+          (typeof exercise.reps === "string" ||
+            typeof exercise.reps === "number") &&
+          String(exercise.reps).trim().length > 0 &&
+          Number.isFinite(Number(exercise.restSeconds)) &&
+          Number(exercise.restSeconds) >= 0 &&
+          Number(exercise.restSeconds) <= 600 &&
+          typeof exercise.cues === "string"
+      )
+  );
+
+if (!validPlan) {
+  return {
+    statusCode: 502,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      error:
+        "The coach returned an incomplete plan or the wrong number of sessions. Please try again.",
+    }),
+  };
+}
+
         return {
           statusCode: 502,
           headers: { "Content-Type": "application/json" },

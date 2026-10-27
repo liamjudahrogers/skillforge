@@ -116,8 +116,16 @@ When action is "generate_plan":
 }
 
 RESPONSE STYLE
-Be friendly, encouraging, direct, and specific. Never claim to have assessed a video or observed form unless the relevant information was actually provided.`;
+Be friendly, encouraging, direct, and specific. Never claim to have assessed a video or observed form unless the relevant information was actually provided.
 
+NORMAL COACH CHAT
+When action is NOT "generate_plan":
+- Answer the user's actual question directly in plain text.
+- Do not return JSON objects, JSON arrays, or structured data.
+- Do not wrap your answer in Markdown code fences.
+- Use short paragraphs or simple bullet points when helpful.
+- Only generate a workout plan when the user explicitly asks for one.
+`;
     const userContent =
       action === "generate_plan"
         ? `Generate my personalized weekly calisthenics plan now.
@@ -276,13 +284,32 @@ ${message}`;
       };
     }
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        reply: outputText.trim(),
-      }),
-    };
+   const chatReply = outputText.trim();
+
+let cleanReply = chatReply;
+
+try {
+  const parsed = JSON.parse(
+    chatReply.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()
+  );
+
+  if (parsed.reply || parsed.answer || parsed.message) {
+    cleanReply = String(parsed.reply || parsed.answer || parsed.message);
+  } else if (parsed.plan || Array.isArray(parsed)) {
+    cleanReply =
+      "That looks like structured workout-plan data rather than a normal chat reply. Try asking me your question again, and I'll answer it directly.";
+  }
+} catch {
+  // Normal text response — keep it as written.
+}
+
+return {
+  statusCode: 200,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    reply: cleanReply,
+  }),
+};
   } catch (error) {
     console.error("Coach function error:", error);
 

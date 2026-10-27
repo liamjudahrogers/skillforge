@@ -19,10 +19,7 @@ exports.handler = async (event) => {
       weekAdjustment = "steady",
     } = JSON.parse(event.body || "{}");
 
-    if (
-      action !== "chat" &&
-      action !== "generate_plan"
-    ) {
+    if (action !== "chat" && action !== "generate_plan") {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
@@ -32,14 +29,12 @@ exports.handler = async (event) => {
 
     if (
       action === "chat" &&
-      (!message || typeof message !== "string")
+      (typeof message !== "string" || !message.trim())
     ) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          error: "Please provide a message.",
-        }),
+        body: JSON.stringify({ error: "Please provide a message." }),
       };
     }
 
@@ -49,54 +44,57 @@ exports.handler = async (event) => {
       return {
         statusCode: 500,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          error: "API key is not configured.",
-        }),
+        body: JSON.stringify({ error: "API key is not configured." }),
       };
     }
 
-    const instructions = `You are SkillForge AI, an expert, supportive, age-appropriate all-around calisthenics coach.
+    const instructions = `You are SkillForge AI, a supportive, age-appropriate calisthenics coach.
 
 PERSONALIZATION
-Use the user's actual training profile, recent workout logs, energy level, weekly adjustments, and conversation history when available.
+Use the user's actual profile, workout logs, energy, weekly adjustments, and conversation history when available.
 
 PROFILE ACCURACY
 - Treat the supplied profile as the source of truth for stated abilities and goals.
-- Never invent personal records, reps, hold times, training frequency, equipment, or recovery status.
-- Do not ask for information already supplied in the profile or logs.
-- If information is missing, make conservative programming choices without claiming the user has an ability they have not confirmed.
+- Never invent personal records, reps, hold times, equipment, or recovery status.
+- Do not ask for information already supplied.
+- If information is missing, make conservative choices without pretending it is known.
 
-SKILL AREAS
-Coach balanced development in:
-- Push-ups, dips, and pushing strength.
-- Pull-ups, chin-ups, and rows.
-- Planche progressions.
-- Handstands and handstand push-ups.
-- Muscle-up preparation.
-- Core, legs, mobility, and recovery.
+EQUIPMENT RULES
+- Only prescribe exercises the user can do with their stated equipment.
+- Never assume access to a gym, pull-up bar, rings, resistance bands, weights, or other equipment unless the profile confirms it.
+- For bodyweight-only training, use genuinely equipment-free exercises and progressions.
+- Do not suggest household furniture or unstable objects as workout equipment.
+- If a needed movement requires unavailable equipment, choose an appropriate alternative.
+- Respect the user's reported abilities. Wanting to learn a muscle-up, planche, handstand, or handstand push-up does not mean the user can perform it yet.
+- For skills the user cannot yet perform, provide suitable foundational exercises and progressions.
 
-COACHING RULES
-- Give practical, specific advice tailored to the user's level.
-- Include exercise order, sets, reps or hold times, rest, and technique cues.
-- Explain how to progress safely.
-- Prioritize technique, foundational strength, and recovery.
-- Consider recent training and fatigue.
-- Never encourage training through pain or attempting advanced skills without adequate preparation.
+GOAL AND DIFFICULTY
+- Prioritize the user's stated goal and skill priority.
+- Match exercise difficulty and volume to the user's experience and reported abilities.
+- If the user reports zero pull-ups or dips, do not prescribe full repetitions as though they can already perform them.
+- Include balanced pushing, pulling, legs, core, mobility, and skill practice as appropriate to the user's goals and equipment.
+- Do not force every category into every session if that would make the plan unbalanced.
+
+COACHING AND SAFETY
+- Include exercise order, sets, reps or hold times, rest, and useful technique cues.
+- Prioritize good technique, gradual progression, and recovery.
+- Consider recent training, fatigue, energy, and the weekly adjustment.
+- Do not encourage training through pain or attempting advanced skills without adequate preparation.
 - Give age-appropriate fitness advice.
 - Do not diagnose injuries or medical conditions.
+- Keep recommendations practical and specific.
 
 PLAN GENERATION
 When action is "generate_plan":
-- Generate an actual personalized training plan, not advice about how to make one.
-- Use the user's survey profile, including goal, experience level, training days, equipment, priorities, and stated abilities.
-- Generate exactly the requested number of training sessions per week when the profile specifies a training-day count.
-- If the profile does not specify training days, choose a conservative schedule appropriate to the available information.
-- Use only exercises that can be performed with the stated equipment, or clearly identify any necessary alternative.
-- Include skill practice, strength, core, legs, mobility, and recovery as appropriate to the user's goals.
-- Give each exercise a name, sets, reps or hold duration, rest time in seconds, and a concise technique cue.
+- Generate the actual personalized weekly plan, not advice about making one.
+- Use the onboarding profile, including goal, experience, training days, equipment, priorities, pull-up ability, dip ability, and recovery.
+- Generate exactly the requested number of training sessions when the profile specifies a valid training-day count.
+- Treat training days as workout sessions, not necessarily consecutive calendar days.
 - Schedule demanding work to allow adequate recovery.
-- Never assume a user can perform a skill merely because they want to learn it.
-- Return ONLY valid JSON. Do not wrap it in Markdown fences.
+- Use recent logs, energy, and weekly adjustments to modify the plan sensibly.
+- Every exercise must include a non-empty name, sets from 1 to 10, reps or hold duration, restSeconds from 0 to 600, and a concise cues string.
+- restSeconds must be a number. sets must be a number.
+- Return ONLY valid JSON, with no Markdown fences or extra commentary.
 - Use this exact structure:
 {
   "plan": [
@@ -133,7 +131,7 @@ ${JSON.stringify(recentLogs)}
 Current energy: ${JSON.stringify(energy)}
 Weekly adjustment: ${JSON.stringify(weekAdjustment)}
 
-Generate the actual plan using the required JSON structure.`
+Follow all equipment, ability, goal, recovery, and session-count rules. Return the actual plan using the required JSON structure.`
         : `Training profile:
 ${JSON.stringify(profile)}
 
@@ -156,7 +154,7 @@ ${message}`;
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: \`Bearer \${apiKey}\`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -181,9 +179,7 @@ ${message}`;
         statusCode: 502,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error:
-            data?.error?.message ||
-            "The AI service returned an error.",
+          error: "The AI service returned an error. Please try again.",
         }),
       };
     }
@@ -216,66 +212,57 @@ ${message}`;
           statusCode: 502,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            error:
-              "The coach generated an invalid plan. Please try again.",
+            error: "The coach generated an invalid plan. Please try again.",
           }),
         };
       }
 
-      
-const requestedDays = Number.parseInt(profile.days, 10);
+      const requestedDays = Number.parseInt(profile.days, 10);
 
-const validPlan =
-  generated &&
-  Array.isArray(generated.plan) &&
-  generated.plan.length > 0 &&
-  (
-    !Number.isInteger(requestedDays) ||
-    generated.plan.length === requestedDays
-  ) &&
-  generated.plan.every(
-    (day) =>
-      day &&
-      typeof day.day === "string" &&
-      typeof day.name === "string" &&
-      typeof day.focus === "string" &&
-      Array.isArray(day.exercises) &&
-      day.exercises.length > 0 &&
-      day.exercises.every(
-        (exercise) =>
-          exercise &&
-          typeof exercise.name === "string" &&
-          exercise.name.trim().length > 0 &&
-          Number.isInteger(Number(exercise.sets)) &&
-          Number(exercise.sets) >= 1 &&
-          Number(exercise.sets) <= 10 &&
-          (typeof exercise.reps === "string" ||
-            typeof exercise.reps === "number") &&
-          String(exercise.reps).trim().length > 0 &&
-          Number.isFinite(Number(exercise.restSeconds)) &&
-          Number(exercise.restSeconds) >= 0 &&
-          Number(exercise.restSeconds) <= 600 &&
-          typeof exercise.cues === "string"
-      )
-  );
+      const validPlan =
+        generated &&
+        Array.isArray(generated.plan) &&
+        generated.plan.length > 0 &&
+        (
+          !Number.isInteger(requestedDays) ||
+          generated.plan.length === requestedDays
+        ) &&
+        generated.plan.every(
+          (day) =>
+            day &&
+            typeof day.day === "string" &&
+            typeof day.name === "string" &&
+            typeof day.focus === "string" &&
+            Array.isArray(day.exercises) &&
+            day.exercises.length > 0 &&
+            day.exercises.every(
+              (exercise) =>
+                exercise &&
+                typeof exercise.name === "string" &&
+                exercise.name.trim().length > 0 &&
+                Number.isInteger(Number(exercise.sets)) &&
+                Number(exercise.sets) >= 1 &&
+                Number(exercise.sets) <= 10 &&
+                (
+                  typeof exercise.reps === "string" ||
+                  typeof exercise.reps === "number"
+                ) &&
+                String(exercise.reps).trim().length > 0 &&
+                Number.isFinite(Number(exercise.restSeconds)) &&
+                Number(exercise.restSeconds) >= 0 &&
+                Number(exercise.restSeconds) <= 600 &&
+                typeof exercise.cues === "string" &&
+                exercise.cues.trim().length > 0
+            )
+        );
 
-if (!validPlan) {
-  return {
-    statusCode: 502,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      error:
-        "The coach returned an incomplete plan or the wrong number of sessions. Please try again.",
-    }),
-  };
-}
-
+      if (!validPlan) {
         return {
           statusCode: 502,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             error:
-              "The coach returned an incomplete plan. Please try again.",
+              "The coach returned an incomplete plan or the wrong number of sessions. Please try again.",
           }),
         };
       }

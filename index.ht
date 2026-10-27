@@ -88,7 +88,14 @@
 </div>
 <script>
 const $=id=>document.getElementById(id);
-const defaultState={profile:null,logs:[],checks:{},selectedDay:0,weekAdjustment:"steady"};
+const defaultState={
+  profile:null,
+  logs:[],
+  checks:{},
+  selectedDay:0,
+  weekAdjustment:"steady",
+  generatedPlan:null
+};
 let memoryState = null;
 function safeRead(){try{return window.localStorage.getItem("skillforge_state")}catch(e){return memoryState}}
 function safeWrite(value){memoryState=value;try{window.localStorage.setItem("skillforge_state",value)}catch(e){}}
@@ -106,21 +113,9 @@ function persist(){safeWrite(JSON.stringify(state))}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 
-async function start() {
-  state.profile = {
-    goal: $("goal").value,
-    level: $("level").value,
-    days: $("days").value,
-    equipment: $("equipment").value,
-    priority: $("priority").value,
-    pullups: $("pullups").value,
-    dips: $("dips").value,
-    recovery: $("recovery").value
-  };
 
-  state.selectedDay = 0;
-  persist();
-  showDashboard();
+async function generatePlanForSavedProfile() {
+  if (!state.profile) return;
 
   $("welcome").textContent = "Building your personalized plan...";
 
@@ -143,7 +138,7 @@ async function start() {
       throw new Error(data.error || "Plan generation failed.");
     }
 
-    state.generatedPlan = data.plan.map((day, index) => ({
+    const newPlan = data.plan.map((day, index) => ({
       day: `Day ${index + 1}`,
       name: day.name || `Session ${index + 1}`,
       focus: day.focus || "Personalized training",
@@ -154,10 +149,11 @@ async function start() {
       ])
     }));
 
-    if (state.generatedPlan.some(day => day.items.length === 0)) {
-      throw new Error("The generated plan contained an empty workout. Please try again.");
+    if (newPlan.some(day => !day.items.length)) {
+      throw new Error("The generated plan contained an empty workout.");
     }
 
+    state.generatedPlan = newPlan;
     state.selectedDay = 0;
     persist();
 
@@ -165,13 +161,33 @@ async function start() {
     renderDays();
     renderSession();
     renderWeek();
-
   } catch (error) {
     console.error("Plan generation error:", error);
     $("welcome").textContent =
       "Couldn't generate your plan right now. Your saved profile is safe—please try again.";
   }
 }
+
+async function start() {
+  state.profile = {
+    goal: $("goal").value,
+    level: $("level").value,
+    days: $("days").value,
+    equipment: $("equipment").value,
+    priority: $("priority").value,
+    pullups: $("pullups").value,
+    dips: $("dips").value,
+    recovery: $("recovery").value
+  };
+
+  state.selectedDay = 0;
+  state.generatedPlan = null;
+  persist();
+  showDashboard();
+
+  await generatePlanForSavedProfile();
+}
+
 function showDashboard(){if(!state.profile)return;$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory()}
 
 function activePlan(){
@@ -260,8 +276,18 @@ $("coachQ").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.sh
 $("updatePlanBtn").onclick=()=>{const feeling=$("weekFeeling").value,sessions=$("weekSessions").value;let mode="steady",msg="Keep the plan steady next week. Aim for consistent attendance and clean technique before increasing difficulty.";if(feeling==="Sore or run-down"||feeling==="Too hard"){mode="easy";msg="Next week will be a lighter week: fewer working sets on most strength exercises. Prioritize sleep, food, and recovery; don't push through pain.";}else if(feeling==="Too easy"&&sessions==="4-5"){mode="progress";msg="You completed most sessions and reported that the work felt easy, so a few selected exercises get a small rep or hold-time increase. Keep form clean and don't add extra sets automatically.";}else if(feeling==="Too easy"){msg="You reported that training felt easy, but consistency comes first. Keep the plan steady until you complete more sessions, then review again.";}state.weekAdjustment=mode;persist();renderDays();renderSession();renderWeek();$("planFeedback").textContent=msg;$("planFeedback").classList.remove("hidden")};
 $("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="skillforge-progress.json";a.click();URL.revokeObjectURL(url)};
 $("resetBtn").onclick=()=>{if(confirm("Clear your saved SkillForge profile and workout history from this browser?")){safeRemove();state={...defaultState};$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");}};
-try { if(state.profile) showDashboard(); }
-catch (err) { console.error("SkillForge startup error:", err); }
+
+try {
+  if (state.profile) {
+    showDashboard();
+
+    if (!state.generatedPlan) {
+      generatePlanForSavedProfile();
+    }
+  }
+} catch (err) {
+  console.error("SkillForge startup error:", err);
+}
 </script>
 </body>
 </html>

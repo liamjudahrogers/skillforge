@@ -249,7 +249,38 @@ function updateBar(){
   $("sessionCount").textContent =
     `${n} of ${w.items.length} exercises checked off`;
 }
-function renderWeek(){const current=activePlan();$("weekList").innerHTML=current.map((w,i)=>`<div class="history"><div class="row"><div><span class="eyebrow">${w.day.toUpperCase()} · ${w.effort.toUpperCase()}</span><h3>${w.name}</h3><p class="muted" style="margin:0">${w.focus}</p></div><button class="secondary smallbtn" data-open-day="${i}">View session</button></div></div>`).join("")+`<div class="notice" style="margin-top:14px">Saturday and Sunday are recovery days. Adjust the plan to your energy, technique, and schedule.</div>`;$("weekList").querySelectorAll("[data-open-day]").forEach(b=>b.onclick=()=>{state.selectedDay=+b.dataset.openDay;persist();renderDays();renderSession();switchTab("today")})}
+function renderWeek() {
+  const current = activePlan();
+  const recoveryDays = Math.max(0, 7 - current.length);
+
+  const recoveryText =
+    `${recoveryDays} day${recoveryDays === 1 ? "" : "s"} each week are available for rest or recovery. Space sessions out and adjust to your energy, technique, and schedule.`;
+
+  $("weekList").innerHTML =
+    current.map((w, i) => `
+      <div class="history">
+        <div class="row">
+          <div>
+            <span class="eyebrow">${esc(w.day.toUpperCase())} · ${esc(w.effort.toUpperCase())}</span>
+            <h3>${esc(w.name)}</h3>
+            <p class="muted" style="margin:0">${esc(w.focus)}</p>
+          </div>
+          <button class="secondary smallbtn" data-open-day="${i}">View session</button>
+        </div>
+      </div>
+    `).join("") +
+    `<div class="notice" style="margin-top:14px">${recoveryText}</div>`;
+
+  $("weekList").querySelectorAll("[data-open-day]").forEach((b) => {
+    b.onclick = () => {
+      state.selectedDay = +b.dataset.openDay;
+      persist();
+      renderDays();
+      renderSession();
+      switchTab("today");
+    };
+  });
+}
 function renderProgress(){
   const total=state.logs.length, minutes=state.logs.reduce((a,l)=>a+(+l.duration||0),0), exercises=state.logs.reduce((a,l)=>a+(+l.completed||0),0);
   const now=Date.now(), weekCount=state.logs.filter(l=>l.ts && now-l.ts<7*24*60*60*1000).length;

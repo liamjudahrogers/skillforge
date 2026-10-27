@@ -45,7 +45,12 @@
     <section class="hero">
       <div class="eyebrow">YOUR TRAINING SPACE</div>
       <h1 id="welcome">Let's build something.</h1>
-      <p class="muted" id="summary"></p>
+      <div id="planError" class="notice hidden" role="status" style="margin:12px 0">
+  Couldn't generate your personalized plan.
+  <button id="retryPlanBtn" class="secondary smallbtn" type="button">
+    Try again
+  </button>
+</div>
       <div class="grid3">
         <div class="metric"><small>Workouts logged</small><strong id="totalWorkouts">0</strong></div>
         <div class="metric"><small>Minutes trained</small><strong id="totalMinutes">0</strong></div>

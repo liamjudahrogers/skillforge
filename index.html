@@ -749,6 +749,25 @@ const plan=[
 ];
 function loadState(){try{return {...defaultState,...JSON.parse(safeRead()||"{}")}}catch(e){return {...defaultState}}}
 function persist(){safeWrite(JSON.stringify(state))}
+async function saveProfileToSupabase() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  if (!user) return;
+
+  const { error } = await supabaseClient
+    .from("profiles")
+    .upsert({
+      id: user.id,
+      display_name: user.email,
+      experience_level: state.profile.level,
+      training_goal: state.profile.goal,
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error("Profile save failed:", error.message);
+  }
+}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 
@@ -823,8 +842,8 @@ async function start() {
   state.selectedDay = 0;
   state.generatedPlan = null;
   persist();
+  await saveProfileToSupabase();
   showDashboard();
-
   await generatePlanForSavedProfile();
 }
 

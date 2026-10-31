@@ -645,6 +645,15 @@ hr,
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://mgtwsvinxaeqzvvyncit.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ccaDaV1Dc1nwimh3KWMADw_U5fthDIl";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+</script>
 </head>
 <body>
 <div class="app">
@@ -654,7 +663,7 @@ hr,
     <button class="secondary smallbtn" id="resetBtn" title="Clear saved data">Reset</button>
   </header>
 
-<main id="authScreen">
+<main id="authScreen" class="hidden">
   <section class="hero">
     <div class="eyebrow">WELCOME TO SKILLFORGE</div>
     <h1>Your training.<br>Your progress.</h1>
@@ -680,7 +689,7 @@ hr,
     <button id="authToggle" class="secondary" type="button">Already have an account? Sign in</button>
   </section>
 </main>
-  <main id="onboarding">
+ <main id="onboarding" class="hidden">
     <section class="hero">
       <div class="eyebrow">YOUR TRAINING ERA STARTS HERE</div>
       <h1>Build strength.<br>Find your flow.</h1>
@@ -698,7 +707,7 @@ hr,
       <div class="field"><label for="dips">How many clean dips can you do? (optional)</label><select id="dips"><option>Not sure</option><option>0–5</option><option>6–9</option><option selected>10–15</option><option>16+</option></select></div>
       <div class="field"><label for="recovery">How's your recovery lately?</label><select id="recovery"><option>Good</option><option>Mixed</option><option>Low</option></select></div>
       <button id="startBtn">Build my dashboard →</button>
-    </section>
+  </section>
   </main>
 
   <main id="dashboard" class="hidden">
@@ -1069,25 +1078,39 @@ $("updatePlanBtn").onclick=()=>{const feeling=$("weekFeeling").value,sessions=$(
 $("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="skillforge-progress.json";a.click();URL.revokeObjectURL(url)};
 $("resetBtn").onclick=()=>{if(confirm("Clear your saved SkillForge profile and workout history from this browser?")){safeRemove();state={...defaultState};$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");}};
 
-try {
-  if (state.profile) {
-    showDashboard();
+async function initializeApp() {
+  try {
+    const { data: { session }, error } =
+      await supabaseClient.auth.getSession();
 
-    if (!state.generatedPlan) {
-      generatePlanForSavedProfile();
+    if (error) throw error;
+
+    if (!session) {
+      $("authScreen").classList.remove("hidden");
+      $("onboarding").classList.add("hidden");
+      $("dashboard").classList.add("hidden");
+      return;
     }
-  }
-} catch (err) {
-  console.error("SkillForge startup error:", err);
-}
-<script>
-  const SUPABASE_URL = "https://mgtwsvinxaeqzvvyncit.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ccaDaV1Dc1nwimh3KWMADw_U5fthDIl";
 
-  const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-  );
+    if (state.profile) {
+      $("authScreen").classList.add("hidden");
+      showDashboard();
+
+      if (!state.generatedPlan) {
+        await generatePlanForSavedProfile();
+      }
+    } else {
+      $("authScreen").classList.add("hidden");
+      $("onboarding").classList.remove("hidden");
+      $("dashboard").classList.add("hidden");
+    }
+  } catch (err) {
+    console.error("SkillForge startup error:", err);
+    $("authMessage").textContent = "Couldn't check your login. Please refresh.";
+  }
+}
+
+initializeApp();
 </script>
 </body>
 </html>

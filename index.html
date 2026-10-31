@@ -654,6 +654,32 @@ hr,
     <button class="secondary smallbtn" id="resetBtn" title="Clear saved data">Reset</button>
   </header>
 
+<main id="authScreen">
+  <section class="hero">
+    <div class="eyebrow">WELCOME TO SKILLFORGE</div>
+    <h1>Your training.<br>Your progress.</h1>
+    <p class="muted">Create an account to keep your training profile and progress with you.</p>
+  </section>
+
+  <section class="panel">
+    <h2 id="authTitle">Create your account</h2>
+
+    <div class="field">
+      <label for="authEmail">Email</label>
+      <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email">
+    </div>
+
+    <div class="field">
+      <label for="authPassword">Password</label>
+      <input id="authPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+    </div>
+
+    <p id="authMessage" class="muted" role="status"></p>
+
+    <button id="authBtn" type="button">Create account →</button>
+    <button id="authToggle" class="secondary" type="button">Already have an account? Sign in</button>
+  </section>
+</main>
   <main id="onboarding">
     <section class="hero">
       <div class="eyebrow">YOUR TRAINING ERA STARTS HERE</div>
@@ -946,6 +972,59 @@ function renderHistory(){if(!state.logs.length){$("history").innerHTML='<div cla
 function switchTab(tab){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("hidden"));$("tab-"+tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.classList.toggle("secondary",b.dataset.tab!==tab)});if(tab==="progress"){renderHistory();renderProgress()}}
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("startBtn").onclick=start;
+let authMode = "signup";
+
+$("authToggle").onclick = () => {
+  authMode = authMode === "signup" ? "login" : "signup";
+
+  $("authTitle").textContent =
+    authMode === "signup" ? "Create your account" : "Welcome back";
+
+  $("authBtn").textContent =
+    authMode === "signup" ? "Create account →" : "Sign in →";
+
+  $("authToggle").textContent =
+    authMode === "signup"
+      ? "Already have an account? Sign in"
+      : "Need an account? Sign up";
+
+  $("authPassword").autocomplete =
+    authMode === "signup" ? "new-password" : "current-password";
+
+  $("authMessage").textContent = "";
+};
+$("authBtn").onclick = async () => {
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+
+  $("authMessage").textContent = "";
+  $("authBtn").disabled = true;
+  $("authBtn").textContent = "Please wait…";
+
+  try {
+    const result = authMode === "signup"
+      ? await supabaseClient.auth.signUp({ email, password })
+      : await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (result.error) throw result.error;
+
+    if (authMode === "signup" && !result.data.session) {
+      $("authMessage").textContent =
+        "Account created! Check your email to confirm, then sign in.";
+      return;
+    }
+
+    $("authScreen").classList.add("hidden");
+    $("onboarding").classList.remove("hidden");
+    $("authMessage").textContent = "";
+  } catch (error) {
+    $("authMessage").textContent = error.message;
+  } finally {
+    $("authBtn").disabled = false;
+    $("authBtn").textContent =
+      authMode === "signup" ? "Create account →" : "Sign in →";
+  }
+};
 $("retryPlanBtn").onclick = async () => {
   $("planError").classList.add("hidden");
   await generatePlanForSavedProfile();

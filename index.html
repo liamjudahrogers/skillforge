@@ -982,6 +982,14 @@ try {
 } catch (err) {
   console.error("SkillForge startup error:", err);
 }
+<script>
+  const SUPABASE_URL = "https://mgtwsvinxaeqzvvyncit.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ccaDaV1Dc1nwimh3KWMADw_U5fthDIl";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 </script>
 </body>
 </html>

@@ -1028,9 +1028,9 @@ function activePlan(){
 
 function renderStats(){$("totalWorkouts").textContent=state.logs.length;$("totalMinutes").textContent=state.logs.reduce((a,l)=>a+(+l.duration||0),0);$("totalExercises").textContent=Object.values(state.checks).reduce((a,arr)=>a+arr.length,0)}
 function renderDays(){const current=activePlan();$("dayButtons").innerHTML=current.map((d,i)=>`<button class="daybtn ${i===state.selectedDay?'active':''}" data-day="${i}">${d.day}</button>`).join("");$("dayButtons").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.selectedDay=+b.dataset.day;persist();renderDays();renderSession()})}
-function renderSession(){const w=activePlan()[state.selectedDay],key=w.day;const checked=state.checks[key]||[];state.exerciseEntries=state.exerciseEntries||{};$("sessionTitle").textContent=w.name;$("sessionFocus").textContent=w.focus;$("effortTag").textContent=w.effort;$("effortTag").className="tag "+(w.effort==="Light"?"easy":"");$("exerciseList").innerHTML=w.items.map((it,i)=>{const entry=state.exerciseEntries[`${key}-${i}`]||{};return `<div class="exercise"><input type="checkbox" data-check="${i}" ${checked.includes(i)?"checked":""}><span class="desc"><strong>${esc(it[0])}</strong><small>${esc(it[1])}</small><span class="set-rep-fields"><label>Sets <input type="number" min="0" max="20" step="1" inputmode="numeric" data-entry="sets" data-index="${i}" value="${entry.sets??""}" placeholder="—"></label><label>Reps <input type="number" min="0" max="999" step="1" inputmode="numeric" data-entry="reps" data-index="${i}" value="${entry.reps??""}" placeholder="—"></label></span></span></div>`}).join("");$("exerciseList").querySelectorAll('input[data-check]').forEach(box=>box.onchange=()=>{const arr=new Set(state.checks[key]||[]);box.checked?arr.add(+box.dataset.check):arr.delete(+box.dataset.check);state.checks[key]=[...arr];persist();updateBar();renderStats()});$("exerciseList").querySelectorAll("input[data-entry]").forEach(input=>input.onchange=()=>{const id=`${key}-${input.dataset.index}`;state.exerciseEntries[id]=state.exerciseEntries[id]||{};const value=input.value===""?null:Number(input.value);if(value===null)delete state.exerciseEntries[id][input.dataset.entry];else state.exerciseEntries[id][input.dataset.entry]=value;persist()});updateBar();$("saveMessage").textContent=""}
+function renderSession(){const w=state.activeCustomWorkout?{day:"custom-"+state.activeCustomWorkout.id,name:state.activeCustomWorkout.name,focus:"Your custom workout",effort:"Moderate",items:state.activeCustomWorkout.items.map(ex=>[ex.name,`${ex.sets} × ${ex.reps}`])}:activePlan()[state.selectedDay],key=w.day;const checked=state.checks[key]||[];state.exerciseEntries=state.exerciseEntries||{};$("sessionTitle").textContent=w.name;$("sessionFocus").textContent=w.focus;$("effortTag").textContent=w.effort;$("effortTag").className="tag "+(w.effort==="Light"?"easy":"");$("exerciseList").innerHTML=w.items.map((it,i)=>{const entry=state.exerciseEntries[`${key}-${i}`]||{};return `<div class="exercise"><input type="checkbox" data-check="${i}" ${checked.includes(i)?"checked":""}><span class="desc"><strong>${esc(it[0])}</strong><small>${esc(it[1])}</small><span class="set-rep-fields"><label>Sets <input type="number" min="0" max="20" step="1" inputmode="numeric" data-entry="sets" data-index="${i}" value="${entry.sets??""}" placeholder="—"></label><label>Reps <input type="number" min="0" max="999" step="1" inputmode="numeric" data-entry="reps" data-index="${i}" value="${entry.reps??""}" placeholder="—"></label></span></span></div>`}).join("");$("exerciseList").querySelectorAll('input[data-check]').forEach(box=>box.onchange=()=>{const arr=new Set(state.checks[key]||[]);box.checked?arr.add(+box.dataset.check):arr.delete(+box.dataset.check);state.checks[key]=[...arr];persist();updateBar();renderStats()});$("exerciseList").querySelectorAll("input[data-entry]").forEach(input=>input.onchange=()=>{const id=`${key}-${input.dataset.index}`;state.exerciseEntries[id]=state.exerciseEntries[id]||{};const value=input.value===""?null:Number(input.value);if(value===null)delete state.exerciseEntries[id][input.dataset.entry];else state.exerciseEntries[id][input.dataset.entry]=value;persist()});updateBar();$("saveMessage").textContent=""}
 function updateBar(){
-  const w = activePlan()[state.selectedDay];
+  const w = state.activeCustomWorkout?{day:"custom-"+state.activeCustomWorkout.id,items:state.activeCustomWorkout.items}:activePlan()[state.selectedDay];
   const n = (state.checks[w.day] || []).length;
 
   $("sessionBar").style.width =
@@ -1134,7 +1134,8 @@ function renderBuilder(){
 }
 function renderCustomWorkouts(){
  const saved=state.customWorkouts||[];
- $("customWorkoutsList").innerHTML=saved.map((w,i)=>`<div class="history"><strong>${esc(w.name)}</strong><p class="muted">${w.items.length} exercises · ${esc(w.items.map(x=>x.name).join(", "))}</p><div class="row" style="flex-wrap:wrap;margin-top:10px"><button class="secondary smallbtn" data-edit-custom="${i}">Edit workout</button><button class="secondary smallbtn" data-delete-custom="${i}">Delete</button></div></div>`).join("")||'<p class="muted">Your saved workouts will show up here.</p>';
+ $("customWorkoutsList").innerHTML=saved.map((w,i)=>`<div class="history"><strong>${esc(w.name)}</strong><p class="muted">${w.items.length} exercises · ${esc(w.items.map(x=>x.name).join(", "))}</p><div class="row" style="flex-wrap:wrap;margin-top:10px"><button class="smallbtn" data-start-custom="${i}">Start workout</button><button class="secondary smallbtn" data-edit-custom="${i}">Edit workout</button><button class="secondary smallbtn" data-delete-custom="${i}">Delete</button></div></div>`).join("")||'<p class="muted">Your saved workouts will show up here.</p>';
+ $("customWorkoutsList").querySelectorAll("[data-start-custom]").forEach(btn=>btn.onclick=()=>{const w=state.customWorkouts[Number(btn.dataset.startCustom)];if(!w)return;state.activeCustomWorkout={...w,items:w.items.map(ex=>({...ex}))};state.selectedDay=0;persist();renderSession();switchTab("today");$("saveMessage").textContent="Custom workout loaded — check off exercises as you go.";});
  $("customWorkoutsList").querySelectorAll("[data-edit-custom]").forEach(btn=>btn.onclick=()=>{
   const i=Number(btn.dataset.editCustom),w=state.customWorkouts[i];if(!w)return;
   workoutBuilder=w.items.map(ex=>({...ex,sets:Number(ex.sets)||1,reps:String(ex.reps||"")}));
@@ -1270,7 +1271,7 @@ let workoutSaveInProgress = false;
 $("saveWorkout").onclick = async () => {
   const button = $("saveWorkout");
   if (workoutSaveInProgress) return;
-  const w = activePlan()[state.selectedDay];
+  const w = state.activeCustomWorkout?{day:"custom-"+state.activeCustomWorkout.id,name:state.activeCustomWorkout.name,items:state.activeCustomWorkout.items.map(ex=>[ex.name,`${ex.sets} × ${ex.reps}`])}:activePlan()[state.selectedDay];
   const checked = state.checks[w.day] || [];
   const completed = checked.length;
   if (!completed) {
@@ -1300,6 +1301,7 @@ $("saveWorkout").onclick = async () => {
       duration, completed, total: w.items.length, exercises
     });
     state.checks[w.day] = [];
+    if(state.activeCustomWorkout)state.activeCustomWorkout=null;
     persist();
     renderSession();
     try {

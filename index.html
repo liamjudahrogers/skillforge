@@ -1518,26 +1518,9 @@ $("authBtn").onclick = async () => {
       return;
     }
 
-    $("authScreen").classList.add("hidden");
-    $("signOutBtn").hidden=false;
-    const cloudProfile = await loadProfileFromSupabase();
-    if (cloudProfile) {
-      state.profile = { ...cloudProfile };
-      state.profile_user_id = result.data.user.id;
-      persist();
-      await syncWorkoutLogs();
-      showDashboard();
-      if (!state.generatedPlan) await generatePlanForSavedProfile();
-    } else {
-      // Do not carry a different account's cached profile into this session.
-      if (state.profile_user_id !== result.data.user.id) {
-        state.profile = null;
-        state.profile_user_id = null;
-        persist();
-      }
-      $("onboarding").classList.remove("hidden");
-      $("dashboard").classList.add("hidden");
-    }
+    // Reuse the startup session-restoration flow after auth succeeds.
+    // It handles profile sync errors and chooses dashboard vs onboarding.
+    await initializeApp();
     $("authMessage").textContent = "";
   } catch (error) {
     $("authMessage").textContent = error.message;

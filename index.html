@@ -731,7 +731,7 @@ hr,
       <button class="active" data-tab="today"><span class="navicon" aria-hidden="true">◷</span><span>Today</span></button>
       <button class="secondary" data-tab="week"><span class="navicon" aria-hidden="true">▦</span><span>Plan</span></button>
       <button class="secondary" data-tab="library"><span class="navicon" aria-hidden="true">＋</span><span>Library</span></button>
-      <button class="secondary" data-tab="progress"><span class="navicon" aria-hidden="true">↗</span><span>Progress</span></button>
+      <button class="secondary" data-tab="skills"><span class="navicon" aria-hidden="true">◇</span><span>Skills</span></button><button class="secondary" data-tab="progress"><span class="navicon" aria-hidden="true">↗</span><span>Progress</span></button>
       <button class="secondary" data-tab="coach"><span class="navicon" aria-hidden="true">✳</span><span>AI Coach</span></button>
     </nav>
     <section id="tab-today">
@@ -779,6 +779,16 @@ hr,
         <div class="eyebrow">SAVED BY YOU</div><h2>My workouts</h2><div id="customWorkoutsList"></div>
       </div>
     </section>
+    <section id="tab-skills" class="hidden">
+      <div class="panel">
+        <div class="eyebrow">YOUR CALISTHENICS PATH</div><h2>Skill progression</h2>
+        <p class="muted">Pick a skill, practice its current step, and move forward when it feels controlled. Skill work is optional—you can add it to workouts or practice it separately.</p>
+        <div class="field"><label for="skillSelect">Choose a skill</label><select id="skillSelect"><option value="handstand">Handstand</option><option value="planche">Planche</option><option value="muscleup">Muscle-up</option><option value="hspu">Handstand push-up</option><option value="frontlever">Front lever</option></select></div>
+        <div id="skillPath"></div>
+        <div class="row" style="flex-wrap:wrap;margin-top:12px"><button id="skillPracticeBtn">Add skill practice to Today</button><button class="secondary" id="skillResetBtn">Reset this skill</button></div>
+        <p id="skillMessage" class="muted" role="status"></p>
+      </div>
+    </section>
     <section id="tab-progress" class="hidden"><div class="panel"><div class="eyebrow">SMALL WINS ADD UP</div><h2>Your progress, at a glance.</h2><p class="muted">A snapshot of your training so far. Keep showing up and focus on clean, controlled reps.</p><div id="progressOverview" class="progress-overview"></div><div class="eyebrow" style="margin-top:22px">SKILL JOURNEY</div><div id="skillProgress"></div></div><div class="panel"><h2>Your training history</h2><p class="muted">Sessions you save stay on this device in this prototype.</p><div id="history"></div><button class="secondary" id="exportBtn">Export my data (JSON)</button></div></section>
     <section id="tab-coach" class="hidden">
       <div class="panel"><div class="eyebrow">YOUR PERSONAL SKILL COACH</div><h2>Let's work on your next level.</h2><p class="muted">Ask follow-up questions and build on the conversation. Your coach uses your training profile and recent saved sessions for context.</p>
@@ -800,7 +810,9 @@ const defaultState={
   checks:{},
   selectedDay:0,
   weekAdjustment:"steady",
-  generatedPlan:null
+  generatedPlan:null,
+  skillProgress:{},
+  skillPracticeAdded:{}
 };
 let memoryState = null;
 function safeRead(){try{return window.localStorage.getItem("skillforge_state")}catch(e){return memoryState}}
@@ -984,7 +996,7 @@ async function start() {
   await generatePlanForSavedProfile();
 }
 
-function showDashboard(){if(!state.profile)return;$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory()}
+function showDashboard(){if(!state.profile)return;$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory();if($("skillSelect"))$("skillSelect").onchange=renderSkillPath}
 
 function activePlan(){
   const source = state.generatedPlan || plan;
@@ -1085,6 +1097,7 @@ function renderProgress(){
   const goal=state.profile?.goal||"General calisthenics";
   const skills=[{name:goal,desc:"Sessions logged · 10-session milestone",value:Math.min(100,total/10*100),detail:total?`${total} of 10 account sessions logged`:"Log your first account session to begin"},{name:"Training consistency",desc:"Account sessions in the last 7 days · 5-session milestone",value:Math.min(100,weekCount/5*100),detail:`${weekCount} of 5 account sessions in the last 7 days`},{name:"Exercise practice",desc:"Exercises checked off · 40-exercise milestone",value:Math.min(100,exercises/40*100),detail:`${exercises} of 40 exercises checked off in account sessions`}];
   $("skillProgress").innerHTML=skills.map((sk,i)=>`<div class="skill-card"><div class="skill-head"><div><strong>${esc(sk.name)}</strong><div class="muted" style="font-size:12px">${esc(sk.desc)}</div></div><span class="tag">${Math.round(sk.value)}%</span></div><div class="skill-track"><span style="width:${sk.value}%"></span></div><div class="skill-foot"><span>${esc(sk.detail)}</span><span>${i===0?"Milestone":"Activity"}</span></div></div>`).join("")+`<div class="notice" style="margin-top:12px">${localOnlyCount?localOnlyCount+" older session(s) are saved only on this device and are excluded from account milestones.": "Milestones use sessions linked to your signed-in account."}</div>`;
+  renderSkillPath();
 }
 function renderHistory(){
   if(!state.logs.length){$("history").innerHTML='<div class="empty-progress">No sessions saved yet. Complete a workout and tap “Save completed session” to start your progress timeline.</div>';return}
@@ -1095,7 +1108,23 @@ function renderHistory(){
     return `<div class="history"><div class="row"><div><h3>${esc(l.name)}</h3><p class="muted" style="margin:0">${esc(l.date)} · ${l.completed}/${l.total} exercises${ownership}</p></div><span class="tag">${esc(l.duration)} min</span></div>${details}</div>`;
   }).join("");
 }
-function switchTab(tab){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("hidden"));$("tab-"+tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.classList.toggle("secondary",b.dataset.tab!==tab)});if(tab==="progress"){renderHistory();renderProgress()}}
+function switchTab(tab){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("hidden"));$("tab-"+tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.classList.toggle("secondary",b.dataset.tab!==tab)});if(tab==="progress"){renderHistory();renderProgress()}if(tab==="skills")renderSkillPath()}
+const skillPaths={
+  handstand:{name:"Handstand",steps:[{name:"Wrist + shoulder prep",goal:"Comfortable warm-up",guide:"Warm wrists and shoulders; stop if uncomfortable."},{name:"Wall plank / pike hold",goal:"3 × 20–30 sec",guide:"Keep shoulders active and breathe steadily."},{name:"Wall-facing handstand hold",goal:"4 × 15–30 sec",guide:"Use a clear, safe space and a stable wall; have supervision while learning."},{name:"Controlled wall weight shifts",goal:"3 × 5 each side",guide:"Small shifts, no rushing or kicking up hard."},{name:"Freestanding balance practice",goal:"Short, controlled attempts",guide:"Only progress when wall work is consistent and safe."}]},
+  planche:{name:"Planche",steps:[{name:"Wrist + scapular prep",goal:"Comfortable warm-up",guide:"Warm up wrists and shoulders first."},{name:"Planche lean",goal:"3 × 8–15 sec",guide:"Lean only as far as you can keep control."},{name:"Tuck planche support prep",goal:"3 × 5–10 sec",guide:"Use parallettes if available; keep attempts submaximal."},{name:"Tuck planche holds",goal:"3 × 5–10 sec",guide:"Only if you can hold a safe, stable position."},{name:"Advanced tuck progression",goal:"Brief quality holds",guide:"Move up gradually; no max-effort attempts."}]},
+  muscleup:{name:"Muscle-up",steps:[{name:"Scapular pull-ups + hollow body",goal:"2–3 easy sets",guide:"Build shoulder control and trunk tension."},{name:"Strict pull-ups",goal:"3 × 4–8 clean reps",guide:"Use your actual current ability; stop before form breaks."},{name:"Chest-to-bar pull-up progression",goal:"3 × 3–5",guide:"Use a controlled range; avoid swinging."},{name:"Transition technique drills",goal:"Low, assisted practice",guide:"Learn with qualified supervision and safe equipment."},{name:"Assisted muscle-up progression",goal:"Quality assisted reps",guide:"Only with safe setup and coaching; don't attempt risky unassisted reps."}]},
+  hspu:{name:"Handstand push-up",steps:[{name:"Wrist + shoulder prep",goal:"Comfortable warm-up",guide:"Keep everything pain-free."},{name:"Pike push-ups",goal:"3 × 6–10",guide:"Use a range you can control."},{name:"Feet-elevated pike push-ups",goal:"3 × 4–8",guide:"Only if regular pike reps are smooth."},{name:"Wall handstand hold",goal:"3 × 15–30 sec",guide:"Build stable overhead control first."},{name:"Partial-range wall HSPU prep",goal:"Supervised, controlled practice",guide:"Use padding and qualified guidance; don't force depth."}]},
+  frontlever:{name:"Front lever",steps:[{name:"Active hang + hollow body",goal:"2–3 easy sets",guide:"Build shoulder and trunk control."},{name:"Tuck front-lever raises / holds",goal:"3 × 5–10 sec",guide:"Use a bar and safe space; keep the tuck compact."},{name:"Advanced tuck holds",goal:"3 × 5–10 sec",guide:"Progress only while maintaining body control."},{name:"One-leg progression",goal:"Brief controlled holds",guide:"Alternate sides and avoid twisting."},{name:"Straddle progression",goal:"Brief quality holds",guide:"This is advanced; take your time."}]}
+};
+function renderSkillPath(){
+ const select=$("skillSelect"); if(!select)return;
+ const key=select.value||"handstand",path=skillPaths[key],progress=state.skillProgress||{},current=Math.max(0,Math.min(path.steps.length-1,Number(progress[key])||0));
+ $("skillPath").innerHTML=`<div class="notice"><strong>${esc(path.name)} · Step ${current+1} of ${path.steps.length}</strong><p style="margin:8px 0">${esc(path.steps[current].name)}</p><div class="muted">${esc(path.steps[current].goal)}</div><p style="margin:8px 0 0">${esc(path.steps[current].guide)}</p></div><div class="skill-track" style="margin-top:12px"><span style="width:${((current+1)/path.steps.length)*100}%"></span></div><div class="row" style="flex-wrap:wrap;margin-top:12px"><button id="skillPrev" class="secondary" ${current===0?"disabled":""}>Previous step</button><button id="skillNext" ${current===path.steps.length-1?"disabled":""}>Mark step ready →</button></div><p class="muted" style="font-size:12px;margin-top:8px">Move forward only when the current step feels controlled and pain-free. Progress is saved on this device.</p>`;
+ $("skillPrev").onclick=()=>{progress[key]=Math.max(0,current-1);state.skillProgress=progress;persist();renderSkillPath()};
+ $("skillNext").onclick=()=>{progress[key]=Math.min(path.steps.length-1,current+1);state.skillProgress=progress;persist();renderSkillPath()};
+ $("skillPracticeBtn").onclick=()=>{state.skillPracticeAdded=state.skillPracticeAdded||{};state.skillPracticeAdded[key]=true;const routine=path.steps[current];state.customWorkouts=state.customWorkouts||[];let w=state.customWorkouts.find(x=>x.name===path.name+" practice");if(!w){w={id:"skill-"+key,name:path.name+" practice",items:[]};state.customWorkouts.push(w)}w.items=[{name:routine.name,sets:3,reps:routine.goal}];state.activeCustomWorkout={...w,items:w.items.map(x=>({...x}))};state.checks=state.checks||{};state.checks["custom-"+w.id]=[];persist();renderSession();switchTab("today");$("saveMessage").textContent="Skill practice added to Today. You can check it off and save it like a workout."};
+ $("skillResetBtn").onclick=()=>{if(confirm("Reset this skill to its first step?")){progress[key]=0;state.skillProgress=progress;persist();renderSkillPath();$("skillMessage").textContent="Skill path reset."}};
+}
 const exerciseLibrary=[
 {name:"Push-ups",category:"Push",difficulty:"Beginner",equipment:"None",sets:3,reps:"8–15",tip:"Keep your body in a straight line and control the lowering."},
 {name:"Diamond push-ups",category:"Push",difficulty:"Intermediate",equipment:"None",sets:3,reps:"6–12",tip:"Keep wrists comfortable; use a narrower hand position only if pain-free."},

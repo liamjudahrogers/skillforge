@@ -742,6 +742,14 @@ hr,
         <p class="muted" id="sessionCount" style="font-size:13px;margin:7px 0 0"></p>
         <div id="exerciseList"></div>
         <div class="field"><label for="duration">Session length (minutes)</label><input id="duration" type="number" min="1" max="300" value="35"></div>
+        <div class="rest-timer" style="margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.035)">
+          <div class="row"><div><div class="eyebrow">REST TIMER</div><strong id="restDisplay" style="font-size:1.8rem;font-variant-numeric:tabular-nums">01:30</strong></div><span class="tag" id="restStatus">Ready</span></div>
+          <div class="row" style="flex-wrap:wrap;margin-top:10px">
+            <button class="secondary smallbtn" type="button" data-rest="30">30 sec</button><button class="secondary smallbtn" type="button" data-rest="60">60 sec</button><button class="secondary smallbtn" type="button" data-rest="90">90 sec</button><button class="secondary smallbtn" type="button" data-rest="120">2 min</button>
+          </div>
+          <div class="row" style="margin-top:10px"><button class="secondary smallbtn" id="restStart" type="button">Start</button><button class="secondary smallbtn" id="restReset" type="button">Reset</button></div>
+          <p class="muted" id="restMessage" aria-live="polite" style="font-size:12px;margin:8px 0 0">Use your rest time to breathe and get ready for your next quality set.</p>
+        </div>
         <button id="saveWorkout">Save completed session</button>
         <p class="muted" id="saveMessage" style="margin:10px 0 0;font-size:13px"></p>
       </div>
@@ -1141,6 +1149,30 @@ $("retryPlanBtn").onclick = async () => {
   $("planError").classList.add("hidden");
   await generatePlanForSavedProfile();
 };
+let restDuration=90,restRemaining=90,restInterval=null;
+function renderRestTimer(){
+  const m=String(Math.floor(restRemaining/60)).padStart(2,"0"),sec=String(restRemaining%60).padStart(2,"0");
+  $("restDisplay").textContent=`${m}:${sec}`;
+  $("restStatus").textContent=restInterval?"Running":restRemaining===0?"Complete":"Ready";
+  $("restStart").textContent=restInterval?"Pause":restRemaining===0?"Restart":"Start";
+}
+function stopRestTimer(){if(restInterval){clearInterval(restInterval);restInterval=null;}}
+document.querySelectorAll("[data-rest]").forEach(button=>button.onclick=()=>{
+  stopRestTimer();restDuration=Number(button.dataset.rest);restRemaining=restDuration;
+  $("restMessage").textContent="Rest set to "+restDuration+" seconds.";renderRestTimer();
+});
+$("restStart").onclick=()=>{
+  if(restInterval){stopRestTimer();renderRestTimer();return;}
+  if(restRemaining===0)restRemaining=restDuration;
+  restInterval=setInterval(()=>{
+    restRemaining=Math.max(0,restRemaining-1);
+    if(restRemaining===0){stopRestTimer();$("restMessage").textContent="Rest complete—start your next set when you're ready."; }
+    renderRestTimer();
+  },1000);
+  renderRestTimer();
+};
+$("restReset").onclick=()=>{stopRestTimer();restRemaining=restDuration;$("restMessage").textContent="Timer reset.";renderRestTimer();};
+renderRestTimer();
 $("saveWorkout").onclick=async()=>{const w=activePlan()[state.selectedDay],checked=state.checks[w.day]||[],completed=checked.length;if(!completed){$("saveMessage").textContent="Check off at least one exercise before saving.";return}const duration=Math.max(1,Math.min(300,Number($("duration").value)||35));const exercises=w.items.map((it,i)=>{const entry=(state.exerciseEntries||{})[`${w.day}-${i}`]||{};return{name:it[0],checked:checked.includes(i),sets:entry.sets??null,reps:entry.reps??null}});let ownerId=null;try{const {data:{user}}=await supabaseClient.auth.getUser();ownerId=user?.id||null;}catch(error){console.warn("Could not identify account for workout sync:",error)}state.logs.push({id:crypto.randomUUID(),user_id:ownerId,name:w.name,date:new Date().toLocaleDateString(),ts:Date.now(),duration,completed,total:w.items.length,exercises});
 // The completed session is now captured in the log. Clear this day's checks
 // so the next time the user opens it, it starts fresh.

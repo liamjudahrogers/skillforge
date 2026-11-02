@@ -79,14 +79,20 @@ exports.handler = async (event) => {
     // Authenticate every AI request against Supabase; never trust client-supplied user IDs or plan claims.
     const authHeader = event.headers?.authorization || event.headers?.Authorization;
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
-    if (!authHeader || !authHeader.startsWith("Bearer ") || !supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
-      return { statusCode: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Please sign in to use SkillForge AI." }) };
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return { statusCode: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Your session is missing from this request. Please refresh the page and sign in again if needed." }) };
+    }
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("AI auth configuration missing:", { hasSupabaseUrl: Boolean(supabaseUrl), hasServiceRoleKey: Boolean(serviceRoleKey) });
+      return { statusCode: 503, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "SkillForge AI authentication is not configured correctly. Please contact support." }) };
     }
 
+    // Supabase Auth accepts the project publishable/anon key; use service-role as
+    // the apikey fallback only when the public key env var was not configured.
     const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: authHeader, apikey: supabaseAnonKey }
+      headers: { Authorization: authHeader, apikey: supabaseAnonKey || serviceRoleKey }
     });
     if (!authResponse.ok) {
       return { statusCode: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Your session is invalid or expired. Please sign in again." }) };

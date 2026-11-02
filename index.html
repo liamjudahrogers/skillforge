@@ -1190,8 +1190,8 @@ $("saveCustomWorkout").onclick=()=>{
  const editingId=state.editingCustomWorkoutId;
  if(editingId){
   const index=state.customWorkouts.findIndex(w=>w.id===editingId);
-  if(index>=0)state.customWorkouts[index]={...state.customWorkouts[index],name,items};
-  else state.customWorkouts.push({id:crypto.randomUUID(),name,items});
+  if(index<0){$("customWorkoutMessage").textContent="Couldn't find that saved workout. Your edits are still here—save as a new workout or reopen the saved one.";return;}
+  state.customWorkouts[index]={...state.customWorkouts[index],name,items};
  }else state.customWorkouts.push({id:crypto.randomUUID(),name,items});
  state.editingCustomWorkoutId=null;persist();workoutBuilder=[];$("customWorkoutName").value="";renderBuilder();renderCustomWorkouts();$("customWorkoutMessage").textContent=editingId?"Changes saved!":"Workout saved!";
 };

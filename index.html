@@ -817,6 +817,8 @@ async function saveProfileToSupabase() {
   const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
   if (authError) throw authError;
   if (!user || !state.profile) return;
+  state.profile_user_id = user.id;
+  persist();
 
   const { error } = await supabaseClient
     .from("profiles")
@@ -1229,6 +1231,12 @@ async function initializeApp() {
 
     if (cloudProfile) {
       state.profile = { ...cloudProfile };
+      state.profile_user_id = session.user.id;
+      persist();
+    } else if (state.profile_user_id !== session.user.id) {
+      // Never reuse a cached profile from a different account on this browser.
+      state.profile = null;
+      state.profile_user_id = null;
       persist();
     }
 

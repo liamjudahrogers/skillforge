@@ -730,6 +730,7 @@ hr,
     <nav class="nav" aria-label="Main navigation">
       <button class="active" data-tab="today"><span class="navicon" aria-hidden="true">◷</span><span>Today</span></button>
       <button class="secondary" data-tab="week"><span class="navicon" aria-hidden="true">▦</span><span>Plan</span></button>
+      <button class="secondary" data-tab="library"><span class="navicon" aria-hidden="true">＋</span><span>Library</span></button>
       <button class="secondary" data-tab="progress"><span class="navicon" aria-hidden="true">↗</span><span>Progress</span></button>
       <button class="secondary" data-tab="coach"><span class="navicon" aria-hidden="true">✳</span><span>AI Coach</span></button>
     </nav>
@@ -756,6 +757,28 @@ hr,
       <div class="notice">Keep your technique controlled and leave a few good reps in reserve. Stop if you feel pain; recovery is part of progress.</div>
     </section>
     <section id="tab-week" class="hidden"><div class="panel"><div class="eyebrow">ADAPT AS YOU GO</div><h2>Your weekly plan</h2><p class="muted">Five available days doesn't mean five hard days. This plan includes one light technique day and two recovery days.</p><div class="field"><label for="weekFeeling">How did this week feel?</label><select id="weekFeeling"><option>About right</option><option>Too easy</option><option>Too hard</option><option>Sore or run-down</option></select></div><div class="field"><label for="weekSessions">How many sessions did you complete?</label><select id="weekSessions"><option value="0-1">0–1</option><option value="2-3">2–3</option><option value="4-5">4–5</option></select></div><button id="updatePlanBtn">Adjust next week →</button><div id="planFeedback" class="notice hidden" style="margin-top:14px" aria-live="polite"></div><div id="weekList"></div></div></section>
+    <section id="tab-library" class="hidden">
+      <div class="panel">
+        <div class="eyebrow">BUILD IT YOUR WAY</div>
+        <h2>Workout Library</h2>
+        <p class="muted">Pick exercises, make your own routine, and save it for later.</p>
+        <div class="field"><label for="librarySearch">Find an exercise</label><input id="librarySearch" placeholder="Search push-ups, core, handstand…"></div>
+        <div class="field"><label for="libraryCategory">Category</label><select id="libraryCategory"><option>All</option><option>Push</option><option>Pull</option><option>Legs</option><option>Core</option><option>Skills</option><option>Warm-up</option></select></div>
+        <div id="libraryList"></div>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">YOUR CUSTOM SESSION</div>
+        <h2>Workout builder</h2>
+        <div class="field"><label for="customWorkoutName">Workout name</label><input id="customWorkoutName" placeholder="e.g. Upper body day"></div>
+        <p class="muted" id="builderCount">Choose exercises above to add them here.</p>
+        <div id="builderList"></div>
+        <button id="saveCustomWorkout" type="button">Save my workout</button>
+        <p id="customWorkoutMessage" class="muted" role="status"></p>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">SAVED BY YOU</div><h2>My workouts</h2><div id="customWorkoutsList"></div>
+      </div>
+    </section>
     <section id="tab-progress" class="hidden"><div class="panel"><div class="eyebrow">SMALL WINS ADD UP</div><h2>Your progress, at a glance.</h2><p class="muted">A snapshot of your training so far. Keep showing up and focus on clean, controlled reps.</p><div id="progressOverview" class="progress-overview"></div><div class="eyebrow" style="margin-top:22px">SKILL JOURNEY</div><div id="skillProgress"></div></div><div class="panel"><h2>Your training history</h2><p class="muted">Sessions you save stay on this device in this prototype.</p><div id="history"></div><button class="secondary" id="exportBtn">Export my data (JSON)</button></div></section>
     <section id="tab-coach" class="hidden">
       <div class="panel"><div class="eyebrow">YOUR PERSONAL SKILL COACH</div><h2>Let's work on your next level.</h2><p class="muted">Ask follow-up questions and build on the conversation. Your coach uses your training profile and recent saved sessions for context.</p>
@@ -1073,6 +1096,57 @@ function renderHistory(){
   }).join("");
 }
 function switchTab(tab){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("hidden"));$("tab-"+tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.classList.toggle("secondary",b.dataset.tab!==tab)});if(tab==="progress"){renderHistory();renderProgress()}}
+const exerciseLibrary=[
+{name:"Push-ups",category:"Push",difficulty:"Beginner",equipment:"None",sets:3,reps:"8–15",tip:"Keep your body in a straight line and control the lowering."},
+{name:"Diamond push-ups",category:"Push",difficulty:"Intermediate",equipment:"None",sets:3,reps:"6–12",tip:"Keep wrists comfortable; use a narrower hand position only if pain-free."},
+{name:"Pike push-ups",category:"Push",difficulty:"Intermediate",equipment:"None",sets:3,reps:"6–10",tip:"Keep hips high and lower with control."},
+{name:"Parallette push-ups",category:"Push",difficulty:"Intermediate",equipment:"Parallettes",sets:3,reps:"6–12",tip:"Use a range you can control comfortably."},
+{name:"Pull-ups",category:"Pull",difficulty:"Intermediate",equipment:"Pull-up bar",sets:3,reps:"4–8",tip:"Start from a controlled hang; avoid swinging."},
+{name:"Chin-ups",category:"Pull",difficulty:"Beginner–Intermediate",equipment:"Pull-up bar",sets:3,reps:"4–8",tip:"Keep reps smooth and controlled."},
+{name:"Inverted rows",category:"Pull",difficulty:"Beginner",equipment:"Secure low bar",sets:3,reps:"8–12",tip:"Only use a sturdy, secure setup."},
+{name:"Scapular pull-ups",category:"Pull",difficulty:"Beginner",equipment:"Pull-up bar",sets:2,reps:"6–10",tip:"Small, controlled shoulder movement."},
+{name:"Bodyweight squats",category:"Legs",difficulty:"Beginner",equipment:"None",sets:3,reps:"10–15",tip:"Keep feet planted and move through a comfortable range."},
+{name:"Reverse lunges",category:"Legs",difficulty:"Beginner",equipment:"None",sets:3,reps:"8 each side",tip:"Step back under control and keep balance."},
+{name:"Single-leg glute bridges",category:"Legs",difficulty:"Intermediate",equipment:"None",sets:3,reps:"8–12 each side",tip:"Keep hips level."},
+{name:"Calf raises",category:"Legs",difficulty:"Beginner",equipment:"None",sets:3,reps:"12–20",tip:"Pause briefly at the top."},
+{name:"Hollow-body hold",category:"Core",difficulty:"Intermediate",equipment:"None",sets:3,reps:"15–30 sec",tip:"Choose a position where your lower back stays controlled."},
+{name:"Dead bug",category:"Core",difficulty:"Beginner",equipment:"None",sets:3,reps:"8 each side",tip:"Move slowly and keep your trunk steady."},
+{name:"Side plank",category:"Core",difficulty:"Beginner",equipment:"None",sets:2,reps:"15–30 sec each side",tip:"Keep hips lifted and breathe normally."},
+{name:"Hanging knee raises",category:"Core",difficulty:"Intermediate",equipment:"Pull-up bar",sets:3,reps:"6–12",tip:"Avoid swinging; use a range you can control."},
+{name:"Wall-facing handstand practice",category:"Skills",difficulty:"Intermediate",equipment:"Wall",sets:3,reps:"15–30 sec",tip:"Practice only in a clear space; stop if uncomfortable."},
+{name:"Planche lean",category:"Skills",difficulty:"Advanced",equipment:"Parallettes optional",sets:3,reps:"8–15 sec",tip:"Keep holds short and pain-free; build gradually."},
+{name:"Tuck L-sit",category:"Skills",difficulty:"Intermediate",equipment:"Parallettes",sets:3,reps:"8–15 sec",tip:"Keep shoulders active and use a manageable tuck."},
+{name:"Wrist and shoulder warm-up",category:"Warm-up",difficulty:"Beginner",equipment:"None",sets:1,reps:"3–5 min",tip:"Use gentle, comfortable movement."},
+{name:"General warm-up",category:"Warm-up",difficulty:"Beginner",equipment:"None",sets:1,reps:"5 min",tip:"Start easy and gradually get moving."}
+];
+let workoutBuilder=[];
+function renderLibrary(){
+ const q=$("librarySearch").value.trim().toLowerCase(),cat=$("libraryCategory").value;
+ const matches=exerciseLibrary.filter(ex=>(cat==="All"||ex.category===cat)&&(!q||(ex.name+" "+ex.category+" "+ex.equipment).toLowerCase().includes(q)));
+ $("libraryList").innerHTML=matches.map(ex=>{const idx=exerciseLibrary.indexOf(ex);return `<div class="history"><div class="row"><div><strong>${esc(ex.name)}</strong><p class="muted" style="margin:3px 0;font-size:12px">${esc(ex.category)} · ${esc(ex.difficulty)} · ${esc(ex.equipment)}</p><small>${esc(ex.sets+" sets · "+ex.reps)}</small><p class="muted" style="font-size:12px;margin:5px 0 0">${esc(ex.tip)}</p></div><button class="secondary smallbtn" data-add-exercise="${idx}">Add +</button></div></div>`}).join("")||'<p class="muted">No exercises found. Try another search.</p>';
+ $("libraryList").querySelectorAll("[data-add-exercise]").forEach(btn=>btn.onclick=()=>{const ex=exerciseLibrary[Number(btn.dataset.addExercise)];workoutBuilder.push({...ex});renderBuilder();});
+}
+function renderBuilder(){
+ $("builderCount").textContent=workoutBuilder.length?workoutBuilder.length+" exercise(s) in your workout":"Choose exercises above to add them here.";
+ $("builderList").innerHTML=workoutBuilder.map((ex,i)=>`<div class="history"><div class="row"><div><strong>${esc(ex.name)}</strong><div class="set-rep-fields"><label>Sets <input type="number" min="1" max="10" data-custom="sets" data-i="${i}" value="${ex.sets}"></label><label>Reps / time <input data-custom="reps" data-i="${i}" value="${esc(ex.reps)}"></label></div></div><button class="secondary smallbtn" data-remove-exercise="${i}">Remove</button></div></div>`).join("");
+ $("builderList").querySelectorAll("input[data-custom]").forEach(input=>input.onchange=()=>{workoutBuilder[Number(input.dataset.i)][input.dataset.custom]=input.value;});
+ $("builderList").querySelectorAll("[data-remove-exercise]").forEach(btn=>btn.onclick=()=>{workoutBuilder.splice(Number(btn.dataset.removeExercise),1);renderBuilder();});
+}
+function renderCustomWorkouts(){
+ const saved=state.customWorkouts||[];
+ $("customWorkoutsList").innerHTML=saved.map((w,i)=>`<div class="history"><strong>${esc(w.name)}</strong><p class="muted">${w.items.length} exercises · ${esc(w.items.map(x=>x.name).join(", "))}</p><button class="secondary smallbtn" data-delete-custom="${i}">Delete</button></div>`).join("")||'<p class="muted">Your saved workouts will show up here.</p>';
+ $("customWorkoutsList").querySelectorAll("[data-delete-custom]").forEach(btn=>btn.onclick=()=>{state.customWorkouts.splice(Number(btn.dataset.deleteCustom),1);persist();renderCustomWorkouts();});
+}
+$("librarySearch").oninput=renderLibrary;
+$("libraryCategory").onchange=renderLibrary;
+$("saveCustomWorkout").onclick=()=>{
+ const name=$("customWorkoutName").value.trim();
+ if(!name||!workoutBuilder.length){$("customWorkoutMessage").textContent="Add a name and at least one exercise first.";return;}
+ state.customWorkouts=state.customWorkouts||[];
+ state.customWorkouts.push({id:crypto.randomUUID(),name,items:workoutBuilder.map(ex=>({name:ex.name,sets:Number(ex.sets)||1,reps:ex.reps,category:ex.category}))});
+ persist();workoutBuilder=[];$("customWorkoutName").value="";renderBuilder();renderCustomWorkouts();$("customWorkoutMessage").textContent="Workout saved!";
+};
+renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("startBtn").onclick=start;
 let authMode = "signup";

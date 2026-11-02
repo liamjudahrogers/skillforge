@@ -1289,6 +1289,76 @@ body:has(#dashboard:not(.hidden)){padding-bottom:calc(112px + env(safe-area-inse
 @media(min-width:641px){#dashboard nav.nav{width:min(calc(100% - 40px),680px);}}
 @media(prefers-reduced-motion:reduce){#dashboard nav.nav button{transition:none;}}
 
+
+/* Mobile layout repair: predictable spacing, compact metrics, and a true floating tab bar */
+:root{--page-gutter:clamp(14px,4vw,28px);--surface-glass:rgba(18,29,44,.82);--surface-glass-strong:rgba(13,22,34,.94)}
+html{scroll-padding-bottom:110px}
+body{overflow-x:clip}
+main,.container,.app,.shell,.page{width:min(calc(100% - 2*var(--page-gutter)),1040px)}
+header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 0 22px}
+header.top .logo{flex:0 0 auto}
+header.top .brand{min-width:0;flex:1 1 160px;display:flex;flex-direction:column;gap:2px}
+header.top .brand strong{font-size:clamp(1.15rem,5vw,1.55rem);line-height:1.1}
+header.top .brand .eyebrow{font-size:.58rem;letter-spacing:.09em;line-height:1.3}
+header.top .header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:1 1 100%;min-width:0}
+header.top .header-actions button{min-width:0;white-space:nowrap}
+#dashboard .hero{padding:clamp(18px,4vw,28px);margin-bottom:14px}
+#dashboard .hero h1{max-width:18ch;font-size:clamp(1.9rem,7vw,2.8rem);line-height:1.08;text-wrap:balance}
+#dashboard .hero .muted{max-width:58ch}
+#dashboard .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}
+#dashboard .metric{min-width:0;padding:14px 12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;gap:4px}
+#dashboard .metric small{font-size:.72rem;line-height:1.35}
+#dashboard .metric strong{font-size:clamp(1.35rem,5vw,1.9rem);line-height:1.1}
+#planError{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 16px;line-height:1.5}
+#planError button{flex:0 0 auto}
+#dashboard .nav{z-index:100;gap:4px}
+#dashboard .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:48px;padding:8px 5px;font-size:.72rem;line-height:1.2}
+#dashboard .nav .navicon{font-size:1.1rem;line-height:1.15}
+#dashboard section{min-width:0}
+#tab-coach .panel,#tab-coach .chat-shell,#tab-coach .chat-feed,#tab-coach .chat-compose{min-width:0;max-width:100%}
+#tab-coach .coach-intro h2{max-width:24ch;text-wrap:balance}
+#tab-coach .coach-intro p{max-width:58ch}
+#tab-coach .chat-msg{width:fit-content;max-width:min(100%,680px);overflow-wrap:anywhere;word-break:normal}
+#tab-coach .chat-compose{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}
+#tab-coach #coachQ{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+#tab-coach .coach-input-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#tab-coach .chat-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#tab-coach .chat-actions small{max-width:100%;flex:1 1 180px}
+#tab-coach #askCoach{flex:0 0 auto}
+@media(max-width:640px){
+  header.top{padding:14px 0 18px;gap:10px}
+  header.top .brand{flex-basis:calc(100% - 54px)}
+  header.top .header-actions{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,.72fr);gap:7px}
+  header.top .header-actions button{width:100%;padding:9px 7px;font-size:.78rem}
+  #dashboard .hero{padding:18px;margin-bottom:12px}
+  #dashboard .hero h1{font-size:clamp(1.8rem,8vw,2.35rem);max-width:16ch}
+  #dashboard .grid3{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
+  #dashboard .metric{padding:11px 8px;border-radius:13px}
+  #dashboard .metric small{font-size:.64rem}
+  #dashboard .metric strong{font-size:1.35rem}
+  #dashboard .nav{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),520px);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:7px;gap:3px;border:1px solid rgba(190,215,239,.24);border-radius:999px;background:rgba(24,36,52,.86);box-shadow:0 12px 38px rgba(0,0,0,.32);backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%)}
+  #dashboard .nav button{border:1px solid transparent;border-radius:999px;min-height:54px;padding:6px 2px;font-size:clamp(.55rem,2.2vw,.68rem);gap:4px}
+  #dashboard .nav button.active{background:#b8e5d0;color:#102018;border-color:rgba(255,255,255,.38);box-shadow:0 2px 12px rgba(184,229,208,.12)}
+  #dashboard .nav .navicon{font-size:1rem}
+  #dashboard{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+  #tab-coach .panel{padding:16px}
+  #tab-coach .coach-intro{margin-bottom:18px}
+  #tab-coach .coach-intro h2{font-size:1.55rem}
+  #tab-coach .chat-shell{padding:0;border-radius:18px;overflow:hidden}
+  #tab-coach .chat-head{padding:13px 14px}
+  #tab-coach .chat-feed{padding:14px;min-height:180px;max-height:42vh}
+  #tab-coach .chat-compose{padding:13px;gap:9px}
+  #tab-coach .chat-actions{align-items:center}
+  #tab-coach .chat-actions small{font-size:.72rem;line-height:1.45}
+  #tab-coach #askCoach{min-height:42px}
+}
+@media(max-width:360px){
+  #dashboard .nav button{font-size:.52rem}
+  #dashboard .nav .navicon{font-size:.92rem}
+  header.top .header-actions{grid-template-columns:1.2fr 1fr .7fr}
+}
+@media(prefers-reduced-motion:reduce){#dashboard .nav{scroll-behavior:auto}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

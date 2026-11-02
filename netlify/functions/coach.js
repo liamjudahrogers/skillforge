@@ -33,6 +33,69 @@ exports.handler = async (event) => {
       };
     }
 
+    // Authenticate every AI request against Supabase; never trust client-supplied user IDs or plan claims.
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+    if (!authHeader || !authHeader.startsWith("Bearer ") || !supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
+      return { statusCode: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Please sign in to use SkillForge AI." }) };
+    }
+
+    const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: authHeader, apikey: supabaseAnonKey }
+    });
+    if (!authResponse.ok) {
+      return { statusCode: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Your session is invalid or expired. Please sign in again." }) };
+    }
+    const user = await authResponse.json();
+    if (!user?.id) {
+      return { statusCode: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Could not verify your account." }) };
+    }
+
+    // Verify Pro status server-side; the browser's subscriptionPlan is never trusted.
+    let isPro = false;
+    const entitlementResponse = await fetch(`${supabaseUrl}/rest/v1/subscription_entitlements?user_id=eq.${encodeURIComponent(user.id)}&select=plan,status,current_period_end`, {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
+    });
+    if (!entitlementResponse.ok) {
+      return { statusCode: 503, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Could not verify your SkillForge plan. Please try again." }) };
+    }
+    const entitlements = await entitlementResponse.json();
+    const entitlement = Array.isArray(entitlements) ? entitlements[0] : null;
+    const periodEnd = entitlement?.current_period_end ? Date.parse(entitlement.current_period_end) : null;
+    isPro = entitlement?.plan === "pro" && (
+      entitlement.status === "active" ||
+      entitlement.status === "trialing" ||
+      (entitlement.status === "canceled" && Number.isFinite(periodEnd) && periodEnd > Date.now())
+    );
+
+    if (action === "generate_plan" && !isPro) {
+      return { statusCode: 403, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Personalized AI plan generation is a Pro feature. Upgrade to unlock it." }) };
+    }
+
+    if (action === "chat") {
+      const weekStart = (() => {
+        const now = new Date();
+        const day = (now.getUTCDay() + 6) % 7;
+        now.setUTCDate(now.getUTCDate() - day);
+        return now.toISOString().slice(0, 10);
+      })();
+      const usageResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/consume_skillforge_ai_message`, {
+        method: "POST",
+        headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_user_id: user.id, p_week_start: weekStart, p_limit: isPro ? 100 : 5 })
+      });
+      if (!usageResponse.ok) {
+        console.error("AI usage enforcement failed:", await usageResponse.text());
+        return { statusCode: 503, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Could not verify AI message usage. Please try again." }) };
+      }
+      const usage = await usageResponse.json();
+      if (!Array.isArray(usage) || usage[0]?.allowed !== true) {
+        return { statusCode: 429, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: isPro ? "You've reached the 100-message weekly Pro limit." : "You've reached the 5-message weekly Free limit. Upgrade for more coaching." }) };
+      }
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {

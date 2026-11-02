@@ -326,16 +326,27 @@ ${safeMessage}`;
     if (action === "generate_plan") {
       let generated;
 
+      // Models occasionally wrap otherwise-valid JSON in a short preamble or
+      // Markdown fence. Extract the outer object before parsing so one formatting
+      // hiccup does not make the user's entire plan fail.
+      const jsonCandidate = (() => {
+        const direct = outputText.trim();
+        try { JSON.parse(direct); return direct; } catch {}
+        const start = direct.indexOf("{");
+        const end = direct.lastIndexOf("}");
+        return start >= 0 && end > start ? direct.slice(start, end + 1) : direct;
+      })();
+
       try {
-        generated = JSON.parse(outputText);
+        generated = JSON.parse(jsonCandidate);
       } catch {
-        console.error("Invalid plan JSON returned by AI.");
+        console.error("Invalid plan JSON returned by AI.", outputText.slice(0, 500));
 
         return {
           statusCode: 502,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            error: "The coach generated an invalid plan. Please try again.",
+            error: "The coach returned a plan in an unreadable format. Please retry.",
           }),
         };
       }

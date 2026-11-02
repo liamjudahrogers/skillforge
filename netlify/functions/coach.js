@@ -8,6 +8,9 @@ exports.handler = async (event) => {
     };
   }
 
+  if (event.httpMethod !== "POST") return { statusCode: 405, headers: { "Content-Type": "application/json", "Allow": "POST" }, body: JSON.stringify({ error: "Use POST for coaching requests." }) };
+  if (!event.body || event.body.length > 12000) return { statusCode: 413, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Request is empty or too large. Please shorten it and try again." }) };
+
   try {
     const {
       message = "",
@@ -170,7 +173,11 @@ ${JSON.stringify(
 Current question:
 ${message}`;
 
-    const response = await fetch(
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    let response;
+    try {
+      response = await fetch(
       "https://api.openai.com/v1/responses",
       {
         method: "POST",
@@ -179,7 +186,7 @@ ${message}`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4.1-mini",
+          model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
           instructions,
           input: [
             {
@@ -188,10 +195,12 @@ ${message}`;
             },
           ],
         }),
+        signal: controller.signal
       }
-    );
+      );
+    } finally { clearTimeout(timeout); }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       console.error("OpenAI API error:", data);
@@ -205,11 +214,8 @@ ${message}`;
       };
     }
 
-    const outputText =
-      data.output
-        ?.flatMap((item) => item.content || [])
-        .find((item) => item.type === "output_text")
-        ?.text || "";
+    const outputText = typeof data.output_text === "string" ? data.output_text.trim() :
+      data.output?.flatMap((item) => item.content || []).filter((item) => item.type === "output_text").map((item) => item.text || "").join("\\n").trim() || "";
 
     if (!outputText.trim()) {
       return {
@@ -325,6 +331,7 @@ return {
 };
   } catch (error) {
     console.error("Coach function error:", error);
+    if (error && error.name === "AbortError") return { statusCode: 504, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "The coach took too long to respond. Please try again." }) };
 
     return {
       statusCode: 500,

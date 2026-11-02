@@ -273,28 +273,30 @@ ${safeMessage}`;
     const timeout = setTimeout(() => controller.abort(), 25000);
     let response;
     try {
-      response = await fetch(
-      "https://api.openai.com/v1/responses",
-      {
+      const requestBody = {
+        model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+        instructions,
+        ...(action === "generate_plan" ? { text: { format: { type: "json_object" } } } : {}),
+        input: [{ role: "user", content: userContent }]
+      };
+      response = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
-        headers: {
-          Authorization: \`Bearer \${apiKey}\`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-          instructions,
-          ...(action === "generate_plan" ? { text: { format: { type: "json_object" } } } : {}),
-          input: [
-            {
-              role: "user",
-              content: userContent,
-            },
-          ],
-        }),
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
         signal: controller.signal
+      });
+      if (!response.ok && action === "generate_plan" && response.status === 400) {
+        const firstError = await response.clone().json().catch(() => ({}));
+        if (/json|format|unsupported/i.test(firstError?.error?.message || "")) {
+          delete requestBody.text;
+          response = await fetch("https://api.openai.com/v1/responses", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
+          });
+        }
       }
-      );
     } finally { clearTimeout(timeout); }
 
     const data = await response.json().catch(() => ({}));
@@ -306,7 +308,7 @@ ${safeMessage}`;
         statusCode: 502,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: "The AI service returned an error. Please try again.",
+          error: action === "generate_plan" ? ("Plan service error (" + response.status + "): " + String(data?.error?.message || data?.message || "Check function logs for details.").slice(0, 220)) : "The AI service returned an error. Please try again.",
         }),
       };
     }

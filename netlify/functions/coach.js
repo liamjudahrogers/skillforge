@@ -70,10 +70,8 @@ exports.handler = async (event) => {
       (entitlement.status === "canceled" && Number.isFinite(periodEnd) && periodEnd > Date.now())
     );
 
-    if (action === "generate_plan" && !isPro) {
-      return { statusCode: 403, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Personalized AI plan generation is a Pro feature. Upgrade to unlock it." }) };
-    }
-
+    // Starter personalized plan generation is available on Free.
+    // Pro-only weekly rebuilds/adjustments must use a distinct action and be gated separately.
     if (action === "chat") {
       const weekStart = (() => {
         const now = new Date();

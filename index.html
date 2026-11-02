@@ -880,19 +880,28 @@ async function generatePlanForSavedProfile() {
       throw new Error(data.error || "Plan generation failed.");
     }
 
+    const requestedDays = Number(state.profile.days);
+    if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 7) {
+      throw new Error("Your saved profile has an invalid number of training days.");
+    }
+
+    if (data.plan.length !== requestedDays) {
+      throw new Error(`The coach returned ${data.plan.length} days, but your profile requests ${requestedDays}. Please retry plan generation.`);
+    }
+
     const newPlan = data.plan.map((day, index) => ({
       day: `Day ${index + 1}`,
       name: day.name || `Session ${index + 1}`,
       focus: day.focus || "Personalized training",
       effort: "Moderate",
-      items: (day.exercises || []).map(ex => [
-        ex.name,
-        `${ex.sets || 3} × ${ex.reps || "6-8"} · Rest ${ex.restSeconds ?? 90}s${ex.cues ? " · " + ex.cues : ""}`
+      items: (Array.isArray(day.exercises) ? day.exercises : []).map(ex => [
+        String(ex?.name || "").trim(),
+        `${ex?.sets || 3} × ${ex?.reps || "6-8"} · Rest ${ex?.restSeconds ?? 90}s${ex?.cues ? " · " + ex.cues : ""}`
       ])
     }));
 
-    if (newPlan.some(day => !day.items.length)) {
-      throw new Error("The generated plan contained an empty workout.");
+    if (newPlan.some(day => !day.items.length || day.items.some(item => !item[0]))) {
+      throw new Error("The generated plan contained an empty workout or an unnamed exercise.");
     }
 
     state.generatedPlan = newPlan;

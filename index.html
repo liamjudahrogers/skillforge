@@ -646,6 +646,130 @@ hr,
 .set-rep-fields{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}.set-rep-fields label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.set-rep-fields input{width:64px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font:inherit}
 
 .upgrade-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(3,8,15,.82);backdrop-filter:blur(12px)}.upgrade-overlay.hidden{display:none!important}.upgrade-card{width:min(100%,520px);max-height:90vh;overflow:auto;margin:0;background:var(--panel-solid);border:1px solid var(--line-strong);border-radius:28px;padding:26px;box-shadow:var(--shadow)}.upgrade-card ul{padding-left:22px;color:var(--text);line-height:1.9}.upgrade-card button{width:100%;margin-top:10px}
+
+/* SkillForge visual refinement: calmer type, consistent controls, cleaner workout cards */
+:root {
+  --bg: #090e17;
+  --bg-soft: #101a29;
+  --panel: rgba(17, 28, 43, .92);
+  --panel-solid: #111c2b;
+  --panel-hover: #18283b;
+  --line: rgba(184, 211, 239, .10);
+  --line-strong: rgba(184, 211, 239, .18);
+  --text: #edf4fc;
+  --muted: #91a4ba;
+  --blue: #a6dcff;
+  --blue-strong: #79c7ff;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --shadow: 0 18px 48px rgba(0,0,0,.22);
+}
+body {
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -.012em;
+  background:
+    radial-gradient(ellipse at 10% -10%, rgba(81,151,211,.11), transparent 32rem),
+    #090e17;
+}
+h1,h2,h3,h4 { letter-spacing: -.04em; line-height: 1.12; }
+h1 { font-weight: 760; }
+h2 { font-weight: 720; }
+h3 { font-size: 1.04rem; font-weight: 680; }
+p { margin-top: 8px; }
+.eyebrow { font-size: .68rem; letter-spacing: .11em; }
+main,.container,.app,.shell,.page { width: min(100% - 40px, 1040px); }
+section,.card,.panel,.history {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
+}
+section,.card,.panel {
+  padding: clamp(18px, 2.5vw, 26px);
+  margin-bottom: 14px;
+}
+nav {
+  gap: 6px; padding: 6px;
+  border-radius: 18px;
+  background: #0e1724;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+nav button,[data-tab],.tab-button {
+  min-height: 40px; padding: 9px 14px;
+  font-size: .9rem; font-weight: 620;
+}
+nav button.active,[data-tab].active,.tab-button.active,nav button[aria-selected="true"] {
+  background: var(--blue);
+  color: #081522;
+  box-shadow: none;
+}
+button.primary,button[type="submit"],.primary,.btn-primary {
+  min-height: 44px; padding: 11px 18px;
+  border-radius: 12px;
+  font-weight: 650;
+  box-shadow: none;
+}
+button.secondary,.secondary {
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #142033;
+  color: #dce9f7;
+}
+input,select,textarea {
+  border: 1px solid var(--line-strong);
+  border-radius: 11px;
+  background: #0c1522;
+  color: var(--text);
+  padding: 10px 12px;
+}
+input::placeholder,textarea::placeholder { color: #71869d; }
+input:focus,select:focus,textarea:focus {
+  border-color: rgba(166,220,255,.55);
+  box-shadow: 0 0 0 3px rgba(121,199,255,.09);
+  outline: none;
+}
+input[type="checkbox"] {
+  appearance: none;
+  width: 17px; height: 17px; min-width: 17px;
+  margin: 0 8px 0 0;
+  border: 1px solid #52667d;
+  border-radius: 5px;
+  background: #0b1420;
+  vertical-align: middle;
+  cursor: pointer;
+}
+input[type="checkbox"]:checked {
+  border-color: var(--blue);
+  background: var(--blue);
+  box-shadow: inset 0 0 0 3px #102033;
+}
+label { color: #dce7f4; }
+.day-card,.exercise-card,.history {
+  background: #111d2c;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: none;
+}
+.day-card { padding: 22px; }
+.exercise-card { padding: 14px 16px; margin: 10px 0; }
+.day-card h2,.day-card h3 { margin-bottom: 8px; }
+.day-card p { margin: 6px 0 14px; }
+.set-rep-fields { gap: 8px; margin-top: 9px; }
+.set-rep-fields label { font-size: .75rem; letter-spacing: .01em; }
+.set-rep-fields input { width: 68px; padding: 7px 9px; border-radius: 9px; }
+.notice { border-radius: 14px; }
+.chat-msg { border-radius: 16px; line-height: 1.55; }
+.upgrade-card { border-radius: 22px; padding: 28px; }
+@media(max-width:640px) {
+  main,.container,.app,.shell,.page { width: min(100% - 24px, 1040px); }
+  section,.card,.panel { padding: 17px; border-radius: 19px; }
+  nav { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-radius: 16px; }
+  nav button,[data-tab],.tab-button { width: 100%; padding: 9px 7px; font-size: .82rem; }
+  .day-card { padding: 17px; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

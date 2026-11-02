@@ -996,8 +996,15 @@ async function generatePlanForSavedProfile() {
  } catch (error) {
   console.error("Plan generation error:", error);
 
-  $("welcome").textContent = "Let's try that again.";
-  $("planError").classList.remove("hidden");
+  $("welcome").textContent = "Your plan couldn't load yet.";
+  const planError = $("planError");
+  planError.classList.remove("hidden");
+  const message = planError.firstChild;
+  if (message && message.nodeType === Node.TEXT_NODE) {
+    message.textContent = (error && error.message ? error.message : "Couldn't generate your personalized plan.") + " ";
+  }
+  $("retryPlanBtn").disabled = false;
+  $("retryPlanBtn").textContent = "Try again";
   }
 }
 

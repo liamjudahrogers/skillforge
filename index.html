@@ -715,6 +715,7 @@ hr,
     <section class="hero">
       <div class="eyebrow">YOUR TRAINING SPACE</div>
       <h1 id="welcome">Let's build something.</h1>
+      <button class="secondary smallbtn" id="editProfileBtn" type="button">Edit training profile</button>
       <div id="planError" class="notice hidden" role="status" style="margin:12px 0">
   Couldn't generate your personalized plan.
   <button id="retryPlanBtn" class="secondary smallbtn" type="button">
@@ -971,7 +972,7 @@ async function generatePlanForSavedProfile() {
   }
 }
 
-async function start() {
+async async function start() {
   state.profile = {
     goal: $("goal").value,
     level: $("level").value,
@@ -1203,6 +1204,7 @@ $("saveCustomWorkout").onclick=()=>{
 renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("startBtn").onclick=start;
+$("editProfileBtn").onclick=()=>{if(!state.profile)return;const p=state.profile;$("goal").value=p.goal||"General calisthenics";$("level").value=p.level||"Intermediate";$("days").value=String(p.days||5);$("equipment").value=p.equipment||"Pull-up bar + parallettes";$("priority").value=p.priority||"Balanced training";$("pullups").value=p.pullups||"Not sure";$("dips").value=p.dips||"Not sure";$("recovery").value=p.recovery||"Good";$("startBtn").textContent="Save profile & rebuild plan →";$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
 let authMode = "signup";
 
 $("authToggle").onclick = () => {

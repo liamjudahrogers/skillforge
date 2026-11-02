@@ -802,8 +802,13 @@ async function syncWorkoutLogs(){
   const {data,error}=await supabaseClient.from("workout_sessions").select("id,workout_name,workout_date,completed,total,duration,exercises,created_at").eq("user_id",user.id).order("created_at",{ascending:true});
   if(error)throw error;
   const cloudLogs=(data||[]).map(row=>({id:row.id,name:row.workout_name,date:row.workout_date,completed:row.completed,total:row.total,duration:row.duration,exercises:row.exercises||[],ts:Date.parse(row.created_at)||Date.now()}));
-  const localForUser=(state.logs||[]).filter(log=>log.user_id===user.id);
-  const merged=new Map([...localForUser,...cloudLogs].map(log=>[log.id,log]));
+  // Preserve untagged legacy sessions locally. They are deliberately not
+  // uploaded or attributed to this account, but a successful sync must not
+  // silently erase them from this browser.
+  const allLocal=state.logs||[];
+  const localOnly=allLocal.filter(log=>!log.user_id);
+  const localForUser=allLocal.filter(log=>log.user_id===user.id);
+  const merged=new Map([...localOnly,...localForUser,...cloudLogs].map(log=>[log.id,log]));
   state.logs=[...merged.values()].sort((a,b)=>(a.ts||0)-(b.ts||0));
   persist();
 }

@@ -1085,6 +1085,165 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 #tab-coach .chat-feed:empty::before{content:"Your coaching conversation will appear here.";display:block;margin:auto;color:#6f8293;font-size:.84rem;text-align:center}
 @media(max-width:640px){#tab-coach .coach-input-meta{font-size:.68rem}#tab-coach #coachQ{min-height:72px}}
 
+
+/* SkillForge — cohesive glass + floating dock design system */
+:root{
+  --bg:#080d13;--bg-soft:#101923;
+  --panel:rgba(20,30,42,.62);--panel-solid:#121d28;
+  --panel-hover:rgba(35,51,66,.72);
+  --line:rgba(211,232,246,.105);--line-strong:rgba(211,232,246,.19);
+  --text:#eff6f7;--muted:#91a4b1;
+  --blue:#b8e5d0;--blue-strong:#8bd0b2;--blue-soft:rgba(184,229,208,.11);
+  --success:#a8e6c8;--danger:#ffb5ad;
+  --radius-sm:16px;--radius-md:22px;--radius-lg:28px;--radius-xl:34px;
+  --shadow:0 22px 65px rgba(0,0,0,.28);
+  --glass-blur:24px;
+}
+html{background:#080d13}
+body{
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(105,171,151,.13),transparent 34rem),
+    radial-gradient(ellipse at 95% 25%,rgba(100,145,180,.10),transparent 30rem),
+    linear-gradient(160deg,#080d13,#0b1219 58%,#080d13);
+  padding-bottom:calc(108px + env(safe-area-inset-bottom));
+}
+main,.container,.app,.shell,.page{width:min(100% - 34px,1060px)}
+header{padding-top:12px}
+section,.card,.panel,.history,.day-card,.exercise-card,.chat-shell,.progress-card,.skill-card,.upgrade-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:0 12px 38px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.025);
+  backdrop-filter:blur(var(--glass-blur)) saturate(135%);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(135%);
+}
+section,.card,.panel{padding:clamp(18px,3vw,28px);margin-bottom:16px}
+h1,h2,h3{letter-spacing:-.045em}
+h1{font-size:clamp(1.9rem,4.7vw,3rem);font-weight:760}
+h2{font-size:clamp(1.35rem,3vw,1.85rem);font-weight:720}
+h3{font-size:1.04rem;font-weight:680}
+.eyebrow{color:#a9ddc7;letter-spacing:.14em;font-size:.67rem}
+p,small,.muted{color:var(--muted)}
+/* Floating, circular bottom navigation */
+#dashboard nav{
+  position:fixed!important;
+  z-index:100;
+  left:50%;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  top:auto!important;
+  transform:translateX(-50%);
+  width:min(calc(100% - 24px),690px);
+  display:flex;
+  flex-wrap:nowrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:5px;
+  padding:8px;
+  border:1px solid rgba(221,240,250,.16);
+  border-radius:999px;
+  background:rgba(13,21,29,.72);
+  box-shadow:0 14px 48px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter:blur(30px) saturate(155%);
+  -webkit-backdrop-filter:blur(30px) saturate(155%);
+}
+#dashboard nav button{
+  display:flex;flex:1 1 0;min-width:0;
+  align-items:center;justify-content:center;gap:7px;
+  min-height:48px;padding:9px 12px;
+  border:1px solid transparent;border-radius:999px;
+  background:transparent;color:#91a5b2;
+  font-size:.83rem;font-weight:650;white-space:nowrap;
+  box-shadow:none!important;
+}
+#dashboard nav button .navicon{font-size:1.12rem;line-height:1}
+#dashboard nav button:hover:not(.active){background:rgba(255,255,255,.055);color:#e4f0f1}
+#dashboard nav button.active,#dashboard nav button[aria-selected=true]{
+  color:#0d2019;background:linear-gradient(135deg,#c6ead8,#9dd8bd);
+  border-color:rgba(226,255,241,.45);
+  box-shadow:0 4px 18px rgba(133,211,177,.17)!important;
+}
+/* Tactile rounded controls */
+button,.button,.btn{border-radius:999px;min-height:42px}
+button.primary,button[type=submit],.primary,.btn-primary{
+  border-radius:999px;background:linear-gradient(135deg,#c5ead8,#99d8bc);
+  color:#10231a;border:1px solid rgba(224,255,239,.36);
+  box-shadow:0 7px 24px rgba(126,203,169,.12)!important;
+}
+button.secondary,.secondary,.btn-secondary{
+  border-radius:999px;background:rgba(255,255,255,.045);
+  border-color:var(--line-strong);color:#e2edf0;
+}
+button:not(:disabled):hover{filter:brightness(1.07)}
+input,select,textarea{
+  border-radius:18px!important;
+  background:rgba(6,13,20,.48);
+  border-color:rgba(211,232,246,.14);
+  min-height:48px;padding:12px 15px;
+  backdrop-filter:blur(12px);
+}
+input:focus,select:focus,textarea:focus{
+  background:rgba(13,25,34,.8);
+  border-color:rgba(184,229,208,.48);
+  box-shadow:0 0 0 4px rgba(184,229,208,.08);
+}
+/* Cleaner cards and workout rhythm */
+.hero{background:linear-gradient(135deg,rgba(184,229,208,.075),rgba(130,170,197,.025));}
+.day-card,.exercise-card,.history,.workout-start-card{
+  background:rgba(17,28,38,.56);
+  border-color:rgba(211,232,246,.10);
+  border-radius:23px;
+}
+.exercise-card{padding:15px 17px}
+.notice{border-radius:22px;background:rgba(184,229,208,.065);border-color:rgba(184,229,208,.17)}
+progress{height:9px}
+.chat-shell{
+  background:rgba(13,22,31,.62);
+  border-radius:30px;padding:clamp(15px,3vw,24px);
+}
+.chat-head{border-color:var(--line)}
+.chat-feed{gap:12px}
+.chat-msg{
+  border-radius:22px;padding:13px 17px;
+  border-color:rgba(211,232,246,.12);
+  background:rgba(255,255,255,.045);
+  backdrop-filter:blur(12px);
+}
+.chat-msg.user{
+  background:rgba(151,211,183,.12);
+  border-color:rgba(184,229,208,.20);
+  border-bottom-right-radius:8px;
+}
+.chat-msg.assistant{background:rgba(255,255,255,.035);border-bottom-left-radius:8px}
+.chat-compose{border-color:var(--line);gap:10px}
+#coachQ{border-radius:22px!important;resize:none}
+#askCoach{min-width:94px;border-radius:999px}
+[data-prompt]{border-radius:999px;background:rgba(255,255,255,.045);border-color:var(--line)}
+.coach-avatar{border-radius:50%;background:rgba(184,229,208,.12);border:1px solid rgba(184,229,208,.18)}
+.upgrade-overlay{background:rgba(3,8,13,.68);backdrop-filter:blur(24px)}
+.upgrade-card{background:rgba(17,28,39,.92);border-radius:32px;backdrop-filter:blur(28px)}
+/* Tiny, calm transitions; honor reduced-motion below */
+section,.card,.panel,.history,.day-card,.exercise-card{transition:border-color .2s ease,background .2s ease,transform .2s ease}
+section:hover,.card:hover,.panel:hover{border-color:rgba(211,232,246,.15)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #b8e5d0;outline-offset:3px}
+@media(max-width:640px){
+  body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+  main,.container,.app,.shell,.page{width:min(100% - 20px,1060px)}
+  #dashboard nav{width:calc(100% - 18px);gap:2px;padding:6px;bottom:calc(8px + env(safe-area-inset-bottom))}
+  #dashboard nav button{min-height:48px;padding:8px 5px;gap:4px;font-size:.7rem;flex-direction:column}
+  #dashboard nav button .navicon{font-size:1.05rem}
+  section,.card,.panel{padding:17px;border-radius:23px}
+  .chat-shell{padding:13px;border-radius:24px}
+  .chat-msg{max-width:96%;padding:12px 14px}
+  #coachQ{min-height:72px}
+  #askCoach{min-width:76px;padding-inline:13px}
+}
+@media(min-width:641px){
+  #dashboard nav{width:min(calc(100% - 36px),690px)}
+}
+@media(prefers-reduced-motion:reduce){
+  section,.card,.panel,.history,.day-card,.exercise-card{transition:none}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

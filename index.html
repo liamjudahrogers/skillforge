@@ -818,6 +818,102 @@ button:not(:disabled):hover {
   filter: brightness(1.06);
 }
 
+
+/* Calm, Fitbod-inspired visual hierarchy */
+:root {
+  --bg: #0b0f14;
+  --bg-soft: #111820;
+  --panel: #121a23;
+  --panel-solid: #151e29;
+  --panel-hover: #1a2633;
+  --line: #25313d;
+  --line-strong: #344453;
+  --text: #edf2f6;
+  --muted: #91a0ae;
+  --blue: #a8d9c2;
+  --blue-strong: #83c4a7;
+  --blue-soft: rgba(168,217,194,.10);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --shadow: 0 14px 38px rgba(0,0,0,.18);
+}
+body {
+  background: #0b0f14;
+  letter-spacing: -.012em;
+  line-height: 1.5;
+}
+body::before, body::after { display:none !important; }
+h1,h2,h3,h4 { letter-spacing: -.04em; }
+h1 { font-size: clamp(1.8rem,4vw,2.7rem); font-weight:740; }
+h2 { font-size: clamp(1.35rem,2.5vw,1.75rem); font-weight:700; }
+h3 { font-size:1.04rem; font-weight:650; }
+.eyebrow { letter-spacing:.12em; font-size:.68rem; }
+.panel, section, .hero, .day-card, .exercise-card, .history, .chat-shell, .progress-card, .skill-card, .upgrade-card {
+  box-shadow:none;
+  border-radius:16px;
+}
+.hero { padding:clamp(20px,3vw,30px); margin-bottom:14px; }
+.panel, section { padding:clamp(18px,2.5vw,24px); }
+nav {
+  gap:6px;
+  padding:6px;
+  border-radius:14px;
+  background:#101720;
+  border:1px solid var(--line);
+  box-shadow:none;
+}
+nav button,[data-tab],.tab-button {
+  min-height:40px;
+  padding:9px 13px;
+  border-radius:10px;
+  letter-spacing:-.015em;
+  font-size:.9rem;
+}
+button {
+  border-radius:10px;
+  min-height:40px;
+  padding:9px 14px;
+  font-size:.9rem;
+  font-weight:600;
+  letter-spacing:-.015em;
+  box-shadow:none !important;
+}
+button:not(:disabled):hover { filter:none; background:#202d39; }
+button:not(.secondary):not(.daybtn):not([data-tab]):not(.tab-button):not(.smallbtn) {
+  background:var(--blue);
+  color:#102018;
+}
+button:not(.secondary):not(.daybtn):not([data-tab]):not(.tab-button):not(.smallbtn):hover:not(:disabled) {
+  background:#bce5d0;
+}
+input,select,textarea {
+  border-radius:10px !important;
+  letter-spacing:-.01em;
+}
+.chat-intro,.coach-intro { margin-bottom:16px; }
+.coach-avatar { width:34px; height:34px; border-radius:10px; }
+.chat-shell { padding:18px; background:#111820; border:1px solid var(--line); }
+.chat-head { padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid var(--line); }
+.chat-feed { min-height:120px; max-height:340px; overflow:auto; gap:10px; }
+.chat-msg { max-width:88%; padding:11px 14px; border-radius:14px; }
+.chat-compose { gap:10px; }
+.chat-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; }
+.chat-actions small { max-width:65%; }
+.workout-start-card { background:#111820; border-color:var(--line); border-radius:14px; padding:18px; }
+.workout-start-card p { font-size:.92rem; }
+.day-card { padding:18px; }
+.exercise-card { padding:12px 14px; margin:8px 0; border-radius:12px; }
+.set-rep-fields { margin-top:8px; }
+.footer { color:#71808d; font-size:.75rem; }
+@media(max-width:640px) {
+  nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  nav button,[data-tab],.tab-button { font-size:.8rem; padding:8px 6px; }
+  .chat-actions { align-items:stretch; flex-direction:column; }
+  .chat-actions small { max-width:100%; }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

@@ -789,9 +789,11 @@ async function syncWorkoutLogs(){
   const {data:{user},error:authError}=await supabaseClient.auth.getUser();
   if(authError)throw authError;
   if(!user)return;
-  const logs=(state.logs||[]).map(log=>({...log,id:log.id||crypto.randomUUID()}));
-  state.logs=logs;
-  persist();
+  // Only upload sessions explicitly tagged for this account. Older untagged
+  // local sessions stay on this device and are not copied into another account.
+  const logs=(state.logs||[])
+    .filter(log=>log.user_id===user.id)
+    .map(log=>({...log,id:log.id||crypto.randomUUID()}));
   if(logs.length){
     const rows=logs.map(log=>({id:log.id,user_id:user.id,workout_name:log.name,workout_date:log.date,completed:log.completed,total:log.total,duration:log.duration,exercises:log.exercises||[],created_at:new Date(log.ts||Date.now()).toISOString()}));
     const {error}=await supabaseClient.from("workout_sessions").upsert(rows,{onConflict:"id"});
@@ -800,7 +802,8 @@ async function syncWorkoutLogs(){
   const {data,error}=await supabaseClient.from("workout_sessions").select("id,workout_name,workout_date,completed,total,duration,exercises,created_at").eq("user_id",user.id).order("created_at",{ascending:true});
   if(error)throw error;
   const cloudLogs=(data||[]).map(row=>({id:row.id,name:row.workout_name,date:row.workout_date,completed:row.completed,total:row.total,duration:row.duration,exercises:row.exercises||[],ts:Date.parse(row.created_at)||Date.now()}));
-  const merged=new Map([...logs,...cloudLogs].map(log=>[log.id,log]));
+  const localForUser=(state.logs||[]).filter(log=>log.user_id===user.id);
+  const merged=new Map([...localForUser,...cloudLogs].map(log=>[log.id,log]));
   state.logs=[...merged.values()].sort((a,b)=>(a.ts||0)-(b.ts||0));
   persist();
 }
@@ -842,9 +845,9 @@ async function loadProfileFromSupabase() {
   // Backward compatibility for accounts created before full profile sync.
   if (data?.experience_level || data?.training_goal) {
     return {
-      ...defaultState.profile,
-      level: data.experience_level || defaultState.profile?.level || "Intermediate",
-      goal: data.training_goal || "General calisthenics"
+      ...(state.profile || {}),
+      level: data.experience_level || state.profile?.level || "Intermediate",
+      goal: data.training_goal || state.profile?.goal || "General calisthenics"
     };
   }
   return null;
@@ -923,7 +926,12 @@ async function start() {
   state.selectedDay = 0;
   state.generatedPlan = null;
   persist();
-  await saveProfileToSupabase();
+  try {
+    await saveProfileToSupabase();
+  } catch (error) {
+    console.error("Profile cloud sync failed:", error);
+    $("saveMessage").textContent = "Profile saved on this device. Cloud sync failed; you can retry later.";
+  }
   showDashboard();
   await generatePlanForSavedProfile();
 }
@@ -1084,7 +1092,7 @@ $("retryPlanBtn").onclick = async () => {
   $("planError").classList.add("hidden");
   await generatePlanForSavedProfile();
 };
-$("saveWorkout").onclick=async()=>{const w=activePlan()[state.selectedDay],checked=state.checks[w.day]||[],completed=checked.length;if(!completed){$("saveMessage").textContent="Check off at least one exercise before saving.";return}const duration=Math.max(1,Math.min(300,Number($("duration").value)||35));const exercises=w.items.map((it,i)=>{const entry=(state.exerciseEntries||{})[`${w.day}-${i}`]||{};return{name:it[0],checked:checked.includes(i),sets:entry.sets??null,reps:entry.reps??null}});state.logs.push({id:crypto.randomUUID(),name:w.name,date:new Date().toLocaleDateString(),ts:Date.now(),duration,completed,total:w.items.length,exercises});persist();$("saveMessage").textContent="Saved on this device. Syncing…";try{await syncWorkoutLogs();$("saveMessage").textContent="Workout saved and synced to your account!";}catch(error){console.error("Workout sync failed:",error);$("saveMessage").textContent="Saved on this device, but cloud sync failed. Check your connection and try again."; }renderStats();renderHistory();renderProgress();};
+$("saveWorkout").onclick=async()=>{const w=activePlan()[state.selectedDay],checked=state.checks[w.day]||[],completed=checked.length;if(!completed){$("saveMessage").textContent="Check off at least one exercise before saving.";return}const duration=Math.max(1,Math.min(300,Number($("duration").value)||35));const exercises=w.items.map((it,i)=>{const entry=(state.exerciseEntries||{})[`${w.day}-${i}`]||{};return{name:it[0],checked:checked.includes(i),sets:entry.sets??null,reps:entry.reps??null}});let ownerId=null;try{const {data:{user}}=await supabaseClient.auth.getUser();ownerId=user?.id||null;}catch(error){console.warn("Could not identify account for workout sync:",error)}state.logs.push({id:crypto.randomUUID(),user_id:ownerId,name:w.name,date:new Date().toLocaleDateString(),ts:Date.now(),duration,completed,total:w.items.length,exercises});persist();$("saveMessage").textContent="Saved on this device. Syncing…";try{await syncWorkoutLogs();$("saveMessage").textContent="Workout saved and synced to your account!";}catch(error){console.error("Workout sync failed:",error);$("saveMessage").textContent="Saved on this device, but cloud sync failed. Check your connection and try again."; }renderStats();renderHistory();renderProgress();};
 const coachMessages=[];
 function addChatMessage(role,content,extra=""){const feed=$("chatFeed"),node=document.createElement("div");node.className="chat-msg "+role+(extra?" "+extra:"");node.textContent=content;feed.appendChild(node);feed.scrollTop=feed.scrollHeight;return node}
 function clearChat(){coachMessages.length=0;$("chatFeed").innerHTML="";$("coachQ").value=""}

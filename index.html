@@ -708,6 +708,7 @@ hr,
       <div class="field"><label for="dips">How many clean dips can you do? (optional)</label><select id="dips"><option>Not sure</option><option>0–5</option><option>6–9</option><option selected>10–15</option><option>16+</option></select></div>
       <div class="field"><label for="recovery">How's your recovery lately?</label><select id="recovery"><option>Good</option><option>Mixed</option><option>Low</option></select></div>
       <button id="startBtn">Build my dashboard →</button>
+      <button id="cancelProfileEditBtn" class="secondary smallbtn hidden" type="button">Cancel editing</button>
   </section>
   </main>
 
@@ -1204,7 +1205,8 @@ $("saveCustomWorkout").onclick=()=>{
 renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("startBtn").onclick=start;
-$("editProfileBtn").onclick=()=>{if(!state.profile)return;const p=state.profile;$("goal").value=p.goal||"General calisthenics";$("level").value=p.level||"Intermediate";$("days").value=String(p.days||5);$("equipment").value=p.equipment||"Pull-up bar + parallettes";$("priority").value=p.priority||"Balanced training";$("pullups").value=p.pullups||"Not sure";$("dips").value=p.dips||"Not sure";$("recovery").value=p.recovery||"Good";$("startBtn").textContent="Save profile & rebuild plan →";$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
+$("editProfileBtn").onclick=()=>{if(!state.profile)return;const p=state.profile;$("goal").value=p.goal||"General calisthenics";$("level").value=p.level||"Intermediate";$("days").value=String(p.days||5);$("equipment").value=p.equipment||"Pull-up bar + parallettes";$("priority").value=p.priority||"Balanced training";$("pullups").value=p.pullups||"Not sure";$("dips").value=p.dips||"Not sure";$("recovery").value=p.recovery||"Good";$("startBtn").textContent="Save profile & rebuild plan →";$("cancelProfileEditBtn").classList.remove("hidden");$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
+$("cancelProfileEditBtn").onclick=()=>{$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("cancelProfileEditBtn").classList.add("hidden");$("startBtn").textContent="Build my dashboard →";$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
 let authMode = "signup";
 
 $("authToggle").onclick = () => {

@@ -1,13 +1,5 @@
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-  }
-
   if (event.httpMethod !== "POST") return { statusCode: 405, headers: { "Content-Type": "application/json", "Allow": "POST" }, body: JSON.stringify({ error: "Use POST for coaching requests." }) };
   if (!event.body || event.body.length > 12000) return { statusCode: 413, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Request is empty or too large. Please shorten it and try again." }) };
 
@@ -215,7 +207,7 @@ ${message}`;
     }
 
     const outputText = typeof data.output_text === "string" ? data.output_text.trim() :
-      data.output?.flatMap((item) => item.content || []).filter((item) => item.type === "output_text").map((item) => item.text || "").join("\\n").trim() || "";
+      data.output?.flatMap((item) => item.content || []).filter((item) => item.type === "output_text").map((item) => item.text || "").join("\n").trim() || "";
 
     if (!outputText.trim()) {
       return {

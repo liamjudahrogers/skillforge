@@ -1602,7 +1602,7 @@ $("upgradeBtn").onclick=async()=>{
       try{
         if(error.context && typeof error.context.json==="function"){
           const payload=await error.context.json();
-          detail=payload?.error || payload?.details || "";
+          detail=payload?.details || payload?.error || "";
         }
       }catch{}
       throw new Error(detail || error.message || "Checkout service returned an error. Please try again.");

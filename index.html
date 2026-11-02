@@ -824,6 +824,7 @@ const FREE_COACH_LIMIT=5;
 const PRO_COACH_LIMIT=100;
 const PRO_FEATURES=new Set(["customWorkouts","aiPlanAdjustments","advancedInsights","fullSkillPaths"]);
 function currentPlan(){return state.subscriptionPlan==="pro"?"pro":"free"}
+async function refreshSubscriptionEntitlement(){state.subscriptionPlan="free";try{const result=await supabaseClient.functions.invoke("subscription-status");if(result.error)throw result.error;state.subscriptionPlan=result.data&&result.data.plan==="pro"?"pro":"free";}catch(error){console.error("Pro verification failed; defaulting to Free",error);state.subscriptionPlan="free";}renderPlanBadge();return state.subscriptionPlan;}
 function isPro(){return currentPlan()==="pro"}
 function weekKey(date=new Date()){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));return d.getUTCFullYear()+"-W"+String(Math.ceil((((d-yearStart)/86400000)+1)/7)).padStart(2,"0")}
 function coachUsage(){const key=weekKey();if(!state.coachUsage||state.coachUsage.week!==key)state.coachUsage={week:key,count:0};return state.coachUsage}
@@ -1477,6 +1478,7 @@ async function initializeApp() {
     }
 
     $("authScreen").classList.add("hidden");
+    await refreshSubscriptionEntitlement();
 
     // Restore the account's saved onboarding profile before deciding
     // whether this device needs onboarding.

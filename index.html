@@ -789,6 +789,7 @@ async function syncWorkoutLogs(){
   const {data:{user},error:authError}=await supabaseClient.auth.getUser();
   if(authError)throw authError;
   if(!user)return;
+  state.activeUserId=user.id;
   // Only upload sessions explicitly tagged for this account. Older untagged
   // local sessions stay on this device and are not copied into another account.
   const logs=(state.logs||[])
@@ -1037,15 +1038,30 @@ function renderWeek() {
     };
   });
 }
-function renderProgress(){
-  const total=state.logs.length, minutes=state.logs.reduce((a,l)=>a+(+l.duration||0),0), exercises=state.logs.reduce((a,l)=>a+(+l.completed||0),0);
-  const now=Date.now(), weekCount=state.logs.filter(l=>l.ts && now-l.ts<7*24*60*60*1000).length;
-  $("progressOverview").innerHTML=`<div class="progress-card"><div class="symbol">↗</div><strong>${total}</strong><small>Sessions saved</small></div><div class="progress-card"><div class="symbol">◷</div><strong>${minutes}</strong><small>Minutes trained</small></div><div class="progress-card"><div class="symbol">✓</div><strong>${weekCount}</strong><small>Last 7 days</small></div>`;
-  const goal=state.profile?.goal||"General calisthenics";
-  const skills=[{name:goal,desc:"Sessions logged · 10-session milestone",value:Math.min(100,total/10*100),detail:total?`${total} of 10 sessions logged`:"Log your first session to begin"},{name:"Training consistency",desc:"Sessions in the last 7 days · 5-session milestone",value:Math.min(100,weekCount/5*100),detail:`${weekCount} of 5 sessions in the last 7 days`},{name:"Exercise practice",desc:"Exercises checked off · 40-exercise milestone",value:Math.min(100,exercises/40*100),detail:`${exercises} of 40 exercises checked off in saved sessions`}];
-  $("skillProgress").innerHTML=skills.map((sk,i)=>`<div class="skill-card"><div class="skill-head"><div><strong>${esc(sk.name)}</strong><div class="muted" style="font-size:12px">${esc(sk.desc)}</div></div><span class="tag">${Math.round(sk.value)}%</span></div><div class="skill-track"><span style="width:${sk.value}%"></span></div><div class="skill-foot"><span>${esc(sk.detail)}</span><span>${i===0?"Milestone":"Activity"}</span></div></div>`).join("");
+function accountLogs(){
+  return state.activeUserId
+    ? (state.logs||[]).filter(log=>log.user_id===state.activeUserId)
+    : (state.logs||[]);
 }
-function renderHistory(){if(!state.logs.length){$("history").innerHTML='<div class="empty-progress">No sessions saved yet. Complete a workout and tap “Save completed session” to start your progress timeline.</div>';return}$("history").innerHTML=[...state.logs].reverse().map(l=>{const details=Array.isArray(l.exercises)?`<div class="history-exercises">${l.exercises.map(ex=>`<div class="muted" style="font-size:12px;margin-top:6px">${ex.checked?"✓":"○"} ${esc(ex.name)}${ex.sets!==null&&ex.sets!==undefined?` · ${esc(ex.sets)} sets`:""}${ex.reps!==null&&ex.reps!==undefined?` × ${esc(ex.reps)} reps`:""}</div>`).join("")}</div>`:"";return `<div class="history"><div class="row"><div><h3>${esc(l.name)}</h3><p class="muted" style="margin:0">${esc(l.date)} · ${l.completed}/${l.total} exercises</p></div><span class="tag">${esc(l.duration)} min</span></div>${details}</div>`}).join("")}
+function renderProgress(){
+  const logs=accountLogs();
+  const total=logs.length, minutes=logs.reduce((a,l)=>a+(+l.duration||0),0), exercises=logs.reduce((a,l)=>a+(+l.completed||0),0);
+  const now=Date.now(), weekCount=logs.filter(l=>l.ts && now-l.ts<7*24*60*60*1000).length;
+  const localOnlyCount=(state.logs||[]).filter(log=>!log.user_id).length;
+  $("progressOverview").innerHTML=`<div class="progress-card"><div class="symbol">↗</div><strong>${total}</strong><small>Account sessions</small></div><div class="progress-card"><div class="symbol">◷</div><strong>${minutes}</strong><small>Account minutes</small></div><div class="progress-card"><div class="symbol">✓</div><strong>${weekCount}</strong><small>Account sessions · 7 days</small></div>`;
+  const goal=state.profile?.goal||"General calisthenics";
+  const skills=[{name:goal,desc:"Sessions logged · 10-session milestone",value:Math.min(100,total/10*100),detail:total?`${total} of 10 account sessions logged`:"Log your first account session to begin"},{name:"Training consistency",desc:"Account sessions in the last 7 days · 5-session milestone",value:Math.min(100,weekCount/5*100),detail:`${weekCount} of 5 account sessions in the last 7 days`},{name:"Exercise practice",desc:"Exercises checked off · 40-exercise milestone",value:Math.min(100,exercises/40*100),detail:`${exercises} of 40 exercises checked off in account sessions`}];
+  $("skillProgress").innerHTML=skills.map((sk,i)=>`<div class="skill-card"><div class="skill-head"><div><strong>${esc(sk.name)}</strong><div class="muted" style="font-size:12px">${esc(sk.desc)}</div></div><span class="tag">${Math.round(sk.value)}%</span></div><div class="skill-track"><span style="width:${sk.value}%"></span></div><div class="skill-foot"><span>${esc(sk.detail)}</span><span>${i===0?"Milestone":"Activity"}</span></div></div>`).join("")+`<div class="notice" style="margin-top:12px">${localOnlyCount?localOnlyCount+" older session(s) are saved only on this device and are excluded from account milestones.": "Milestones use sessions linked to your signed-in account."}</div>`;
+}
+function renderHistory(){
+  if(!state.logs.length){$("history").innerHTML='<div class="empty-progress">No sessions saved yet. Complete a workout and tap “Save completed session” to start your progress timeline.</div>';return}
+  $("history").innerHTML=[...state.logs].reverse().map(l=>{
+    const localOnly=!l.user_id;
+    const details=Array.isArray(l.exercises)?`<div class="history-exercises">${l.exercises.map(ex=>`<div class="muted" style="font-size:12px;margin-top:6px">${ex.checked?"✓":"○"} ${esc(ex.name)}${ex.sets!==null&&ex.sets!==undefined?` · ${esc(ex.sets)} sets`:""}${ex.reps!==null&&ex.reps!==undefined?` × ${esc(ex.reps)} reps`:""}</div>`).join("")}</div>`:"";
+    const ownership=localOnly?' · <span class="tag">This device only</span>':' · <span class="tag">Account synced</span>';
+    return `<div class="history"><div class="row"><div><h3>${esc(l.name)}</h3><p class="muted" style="margin:0">${esc(l.date)} · ${l.completed}/${l.total} exercises${ownership}</p></div><span class="tag">${esc(l.duration)} min</span></div>${details}</div>`;
+  }).join("");
+}
 function switchTab(tab){document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("hidden"));$("tab-"+tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);b.classList.toggle("secondary",b.dataset.tab!==tab)});if(tab==="progress"){renderHistory();renderProgress()}}
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("startBtn").onclick=start;
@@ -1193,6 +1209,7 @@ async function initializeApp() {
     if (error) throw error;
 
     if (!session) {
+      state.activeUserId=null;
       $("authScreen").classList.remove("hidden");
       $("onboarding").classList.add("hidden");
       $("dashboard").classList.add("hidden");

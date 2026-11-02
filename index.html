@@ -1077,6 +1077,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 @media(prefers-reduced-motion:reduce){.chat-msg.pending::after{animation:none}}
 
+
+/* Composer refinement: quiet helper text, responsive textarea, clear disabled affordance. */
+#tab-coach .coach-input-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#788b9b;font-size:.72rem}
+#tab-coach #coachQ{min-height:78px;max-height:160px;overflow-y:auto;transition:border-color .16s ease,background .16s ease}
+#tab-coach #askCoach:disabled{background:#24342f!important;color:#81968c!important;border-color:#31463d!important;cursor:not-allowed;filter:none!important}
+#tab-coach .chat-feed:empty::before{content:"Your coaching conversation will appear here.";display:block;margin:auto;color:#6f8293;font-size:.84rem;text-align:center}
+@media(max-width:640px){#tab-coach .coach-input-meta{font-size:.68rem}#tab-coach #coachQ{min-height:72px}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1246,7 +1254,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <div class="coach-intro"><div class="coach-avatar">✳</div><div><strong>SkillForge AI</strong><div class="muted" style="font-size:12px">Calisthenics guidance · Technique first</div></div><span class="tag easy" style="margin-left:auto">AI COACH</span></div>
         <div class="field"><label for="energy">How are you feeling today?</label><select id="energy"><option>Ready to train</option><option>A bit tired</option><option>Very sore or run-down</option></select></div>
         <div class="suggestions" aria-label="Suggested questions"><button class="suggestion" data-prompt="Help me improve my tuck planche technique.">Planche help</button><button class="suggestion" data-prompt="Build me a safe progression toward my first muscle-up.">Muscle-up</button><button class="suggestion" data-prompt="How should I adjust today's workout if I'm tired?">Adjust my workout</button></div>
-        <div class="chat-shell"><div class="chat-head"><strong>Conversation</strong><button class="secondary chat-clear" id="clearChat" type="button">Clear chat</button></div><div id="chatFeed" class="chat-feed" role="log" aria-live="polite" aria-relevant="additions text"></div><div class="chat-compose"><label for="coachQ" style="display:block;font-weight:700;font-size:13px;margin-bottom:7px">Message your coach</label><textarea id="coachQ" rows="3" maxlength="1200" placeholder="Ask about a skill, form, recovery, or your plan…"></textarea><div class="chat-actions"><small>Enter a message; use Shift+Enter for a new line. Stop if you feel pain.</small><button id="askCoach" type="button">Send ↗</button></div></div></div>
+        <div class="chat-shell"><div class="chat-head"><strong>Conversation</strong><button class="secondary chat-clear" id="clearChat" type="button">Clear chat</button></div><div id="chatFeed" class="chat-feed" role="log" aria-live="polite" aria-relevant="additions text"></div><div class="chat-compose"><label for="coachQ" style="display:block;font-weight:700;font-size:13px;margin-bottom:7px">Message your coach</label><textarea id="coachQ" rows="3" maxlength="1200" placeholder="Ask about a skill, form, recovery, or your plan…"></textarea>
+          <div class="coach-input-meta"><span>Be specific for better coaching</span><span id="coachCharCount" aria-live="off">0 / 1200</span></div><div class="chat-actions"><small>Enter a message; use Shift+Enter for a new line. Stop if you feel pain.</small><button id="askCoach" type="button">Send ↗</button></div></div></div>
         <p class="muted" style="font-size:11px;margin:12px 0 0">Coaching is educational, not medical advice. Avoid sharing personal or sensitive information.</p>
       </div>
     </section>
@@ -1879,6 +1888,17 @@ function addChatMessage(role,content,extra=""){const feed=$("chatFeed"),node=doc
 function clearChat(){coachMessages.length=0;$("chatFeed").innerHTML="";$("coachQ").value=""}
 $("clearChat").onclick=clearChat;
 document.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>{$("coachQ").value=b.dataset.prompt;$("coachQ").focus()});
+// Coach composer quality-of-life: live character count, auto-grow, and clear send state.
+const coachInput=$("coachQ"),coachSend=$("askCoach"),coachCount=$("coachCharCount");
+function syncCoachComposer(){
+  if(!coachInput||!coachSend)return;
+  if(coachCount)coachCount.textContent=`${coachInput.value.length} / 1200`;
+  coachInput.style.height="auto";
+  coachInput.style.height=Math.min(coachInput.scrollHeight,160)+"px";
+  coachSend.disabled=!coachInput.value.trim()||coachInput.disabled;
+}
+coachInput.addEventListener("input",syncCoachComposer);
+syncCoachComposer();
 async function sendCoachMessage(){const usage=coachUsage(),limit=isPro()?PRO_COACH_LIMIT:FREE_COACH_LIMIT;if(usage.count>=limit){showUpgrade("AI Coach message limit reached");return;}const q=$("coachQ").value.trim(),energy=$("energy").value,button=$("askCoach"),input=$("coachQ");if(!q||button.disabled)return;if(!state.profile){addChatMessage("assistant","Finish your training setup first so I can personalize my advice.");return}input.value="";coachMessages.push({role:"user",content:q});addChatMessage("user",q);const pending=addChatMessage("assistant","Thinking through your question…","pending");button.disabled=true;button.textContent="Thinking…";input.disabled=true;try{const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();if(sessionError)throw sessionError;if(!session?.access_token)throw new Error("Please sign in again to use AI Coach.");const response=await fetch("/.netlify/functions/coach",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({message: coachMessages[coachMessages.length - 1]?.content || coachMessages[coachMessages.length - 1]?.text || "",
 messages: coachMessages.slice(-8),profile:state.profile,energy,recentLogs:state.logs.slice(-6).map(l=>({name:l.name,date:l.date,completed:l.completed,total:l.total,duration:l.duration,exercises:Array.isArray(l.exercises)?l.exercises.map(ex=>({name:ex.name,checked:Boolean(ex.checked),sets:ex.sets??null,reps:ex.reps??null})):[]})),weekAdjustment:state.weekAdjustment})});let data={};try{data=await response.json()}catch{}if(!response.ok)throw new Error(data.error||"The coach couldn't respond. Try again in a moment.");const rawAnswer = String(
   data.reply ||

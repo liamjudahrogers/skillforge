@@ -982,6 +982,51 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @keyframes sf-shimmer { to { transform:translateX(100%); } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; } }
  .header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.header-actions #headerUpgradeBtn{white-space:nowrap}@media(max-width:520px){header.top{gap:10px;flex-wrap:wrap}.header-actions{margin-left:auto}.header-actions #headerUpgradeBtn{font-size:.78rem;padding:8px 10px}}
+
+/* SkillForge polish pass — focused coach layout, consistent spacing, clear loading */
+header.top{display:flex;align-items:center;gap:14px;padding:14px 0 18px}
+header.top .brand{display:flex;flex-direction:column;gap:2px;line-height:1.15}
+header.top .header-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+#headerUpgradeBtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:11px;padding:10px 14px;white-space:nowrap}
+#dashboard{padding-bottom:36px}
+#dashboard .hero{margin-bottom:14px}
+#dashboard nav{position:sticky;top:8px;z-index:20;margin:0 0 16px}
+#tab-coach .coach-intro{max-width:760px;margin:0 auto 18px}
+#tab-coach .chat-shell{width:100%;max-width:820px;margin:0 auto;padding:0;overflow:hidden;background:#101821;border:1px solid #293642;border-radius:18px}
+#tab-coach .chat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;margin:0;background:#121d28;border-bottom:1px solid #263542}
+#tab-coach .chat-head strong{font-size:.94rem;letter-spacing:-.02em}
+#tab-coach .chat-clear{min-height:32px;padding:6px 10px;font-size:.78rem}
+#tab-coach .chat-feed{display:flex;flex-direction:column;gap:12px;min-height:220px;max-height:min(52vh,520px);overflow:auto;padding:20px;background:#0d141c;scroll-behavior:smooth}
+#tab-coach .chat-msg{max-width:min(88%,640px);width:fit-content;padding:12px 15px;margin:0;border:1px solid #2a3947;border-radius:15px;background:#151f2a;color:#e8eff5;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+#tab-coach .chat-msg.user{align-self:flex-end;border-color:#365748;border-bottom-right-radius:5px;background:#1c342b;color:#e8f8ef}
+#tab-coach .chat-msg.assistant{align-self:flex-start;border-bottom-left-radius:5px}
+#tab-coach .chat-msg.pending{display:flex;align-items:center;gap:9px;color:#a8b7c5;animation:none}
+#tab-coach .chat-msg.pending::after{content:"";width:24px;height:6px;display:inline-block;background:radial-gradient(circle,#a8d9c2 2px,transparent 3px) 0 50%/8px 6px repeat-x;animation:coachDots .9s steps(3,end) infinite}
+@keyframes coachDots{to{background-position:8px 50%}}
+#tab-coach .chat-compose{padding:16px 18px 18px;background:#111a24;border-top:1px solid #263542}
+#tab-coach .chat-compose>label{margin-bottom:8px;color:#dce7ef;font-size:.82rem}
+#tab-coach #coachQ{min-height:88px;resize:vertical;border-radius:12px;background:#0c141d}
+#tab-coach .chat-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+#tab-coach .chat-actions small{max-width:70%;font-size:.75rem;line-height:1.45}
+#tab-coach #askCoach{min-width:92px;border-radius:11px}
+#tab-coach .suggestions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+#tab-coach .suggestion{border:1px solid #314252;border-radius:10px;background:#141f2a;color:#cbd8e3;padding:9px 12px;font-size:.82rem}
+#tab-coach .suggestion:hover{border-color:#739c88;background:#192a25}
+#tab-coach .coach-intro h2{margin:5px 0 8px}
+#tab-coach .coach-intro p{max-width:650px;margin:0}
+.footer{padding:22px 0;color:#718191;font-size:.75rem;text-align:center}
+@media(max-width:640px){
+ header.top{gap:10px;padding:10px 0 14px}
+ header.top .brand .eyebrow{font-size:.58rem;letter-spacing:.08em}
+ #headerUpgradeBtn{font-size:.76rem;padding:8px 10px}
+ #dashboard nav{position:relative;top:auto}
+ #tab-coach .chat-feed{min-height:180px;max-height:48vh;padding:14px}
+ #tab-coach .chat-msg{max-width:94%;font-size:.92rem}
+ #tab-coach .chat-compose{padding:13px}
+ #tab-coach .chat-actions{align-items:flex-end}
+ #tab-coach .chat-actions small{max-width:62%}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1156,7 +1201,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       </div>
     </section>
   </main>
-  <div class="footer">SkillForge AI prototype · Progress saved locally on this device · Not medical advice</div>
+  <div class="footer">SkillForge · Your training data syncs to your account when signed in · Not medical advice</div>
 </div>
 <script>
 const $=id=>document.getElementById(id);

@@ -107,17 +107,23 @@ exports.handler = async (event) => {
     const entitlementResponse = await fetch(`${supabaseUrl}/rest/v1/subscription_entitlements?user_id=eq.${encodeURIComponent(user.id)}&select=plan,status,current_period_end`, {
       headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
     });
+    // Plan generation is a Free feature, so a subscription-table hiccup must
+    // never block it. If entitlement lookup fails, safely treat the user as Free;
+    // chat still goes through the server-side Free usage limit below.
     if (!entitlementResponse.ok) {
-      return { statusCode: 503, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Could not verify your SkillForge plan. Please try again." }) };
+      console.error("Entitlement lookup failed; defaulting to Free access.", {
+        status: entitlementResponse.status
+      });
+    } else {
+      const entitlements = await entitlementResponse.json();
+      const entitlement = Array.isArray(entitlements) ? entitlements[0] : null;
+      const periodEnd = entitlement?.current_period_end ? Date.parse(entitlement.current_period_end) : null;
+      isPro = entitlement?.plan === "pro" && (
+        entitlement.status === "active" ||
+        entitlement.status === "trialing" ||
+        (entitlement.status === "canceled" && Number.isFinite(periodEnd) && periodEnd > Date.now())
+      );
     }
-    const entitlements = await entitlementResponse.json();
-    const entitlement = Array.isArray(entitlements) ? entitlements[0] : null;
-    const periodEnd = entitlement?.current_period_end ? Date.parse(entitlement.current_period_end) : null;
-    isPro = entitlement?.plan === "pro" && (
-      entitlement.status === "active" ||
-      entitlement.status === "trialing" ||
-      (entitlement.status === "canceled" && Number.isFinite(periodEnd) && periodEnd > Date.now())
-    );
 
     // Starter personalized plan generation is available on Free.
     // Pro-only weekly rebuilds/adjustments must use a distinct action and be gated separately.

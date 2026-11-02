@@ -683,7 +683,10 @@ hr,
 
     <div class="field">
       <label for="authPassword">Password</label>
-      <input id="authPassword" type="password" placeholder="Uppercase, lowercase, number, symbol" autocomplete="new-password" aria-describedby="passwordHint">
+      <div class="password-wrap" style="display:flex;gap:8px;align-items:center">
+        <input id="authPassword" type="password" placeholder="Uppercase, lowercase, number, symbol" autocomplete="new-password" aria-describedby="passwordHint" style="flex:1;min-width:0">
+        <button id="togglePassword" class="secondary" type="button" aria-label="Show password" title="Show password" style="width:auto;padding:10px 12px;flex-shrink:0">👁</button>
+      </div>
       <small id="passwordHint" class="muted">Use at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol.</small>
     </div>
 
@@ -1293,6 +1296,15 @@ $("authToggle").onclick = () => {
 
   $("authMessage").textContent = "";
 };
+$("togglePassword").onclick = () => {
+  const input = $("authPassword");
+  const showing = input.type === "password";
+  input.type = showing ? "text" : "password";
+  $("togglePassword").textContent = showing ? "🙈" : "👁";
+  $("togglePassword").setAttribute("aria-label", showing ? "Hide password" : "Show password");
+  $("togglePassword").title = showing ? "Hide password" : "Show password";
+};
+
 function passwordMeetsRequirements(password) {
   return /[a-z]/.test(password) &&
     /[A-Z]/.test(password) &&

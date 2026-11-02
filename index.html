@@ -1173,16 +1173,61 @@ $("restStart").onclick=()=>{
 };
 $("restReset").onclick=()=>{stopRestTimer();restRemaining=restDuration;$("restMessage").textContent="Timer reset.";renderRestTimer();};
 renderRestTimer();
-$("saveWorkout").onclick=async()=>{const w=activePlan()[state.selectedDay],checked=state.checks[w.day]||[],completed=checked.length;if(!completed){$("saveMessage").textContent="Check off at least one exercise before saving.";return}const duration=Math.max(1,Math.min(300,Number($("duration").value)||35));const exercises=w.items.map((it,i)=>{const entry=(state.exerciseEntries||{})[`${w.day}-${i}`]||{};return{name:it[0],checked:checked.includes(i),sets:entry.sets??null,reps:entry.reps??null}});let ownerId=null;try{const {data:{user}}=await supabaseClient.auth.getUser();ownerId=user?.id||null;}catch(error){console.warn("Could not identify account for workout sync:",error)}state.logs.push({id:crypto.randomUUID(),user_id:ownerId,name:w.name,date:new Date().toLocaleDateString(),ts:Date.now(),duration,completed,total:w.items.length,exercises});
-// The completed session is now captured in the log. Clear this day's checks
-// so the next time the user opens it, it starts fresh.
-state.checks[w.day]=[];
-persist();
-renderSession();
-$("saveMessage").textContent="Saved on this device. Syncing…";
-try{await syncWorkoutLogs();$("saveMessage").textContent="Workout saved and synced to your account!";}
-catch(error){console.error("Workout sync failed:",error);$("saveMessage").textContent="Saved on this device, but cloud sync failed. Check your connection and try again."; }
-renderStats();renderHistory();renderProgress();};
+let workoutSaveInProgress = false;
+$("saveWorkout").onclick = async () => {
+  const button = $("saveWorkout");
+  if (workoutSaveInProgress) return;
+  const w = activePlan()[state.selectedDay];
+  const checked = state.checks[w.day] || [];
+  const completed = checked.length;
+  if (!completed) {
+    $("saveMessage").textContent = "Check off at least one exercise before saving.";
+    return;
+  }
+  workoutSaveInProgress = true;
+  button.disabled = true;
+  button.textContent = "Saving workout…";
+  $("saveMessage").textContent = "Saving your session…";
+  try {
+    const duration = Math.max(1, Math.min(300, Number($("duration").value) || 35));
+    const exercises = w.items.map((it, i) => {
+      const entry = (state.exerciseEntries || {})[String(w.day) + "-" + i] || {};
+      return { name: it[0], checked: checked.includes(i), sets: entry.sets ?? null, reps: entry.reps ?? null };
+    });
+    let ownerId = null;
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      ownerId = user?.id || null;
+    } catch (error) {
+      console.warn("Could not identify account for workout sync:", error);
+    }
+    state.logs.push({
+      id: crypto.randomUUID(), user_id: ownerId, name: w.name,
+      date: new Date().toLocaleDateString(), ts: Date.now(),
+      duration, completed, total: w.items.length, exercises
+    });
+    state.checks[w.day] = [];
+    persist();
+    renderSession();
+    try {
+      await syncWorkoutLogs();
+      $("saveMessage").textContent = "Workout saved and synced to your account!";
+    } catch (error) {
+      console.error("Workout sync failed:", error);
+      $("saveMessage").textContent = "Saved on this device, but cloud sync failed. Check your connection and try again.";
+    }
+    renderStats();
+    renderHistory();
+    renderProgress();
+  } catch (error) {
+    console.error("Workout save failed:", error);
+    $("saveMessage").textContent = "Something went wrong while saving. Please try again.";
+  } finally {
+    workoutSaveInProgress = false;
+    button.disabled = false;
+    button.textContent = "Save completed session";
+  }
+};
 const coachMessages=[];
 function addChatMessage(role,content,extra=""){const feed=$("chatFeed"),node=document.createElement("div");node.className="chat-msg "+role+(extra?" "+extra:"");node.textContent=content;feed.appendChild(node);feed.scrollTop=feed.scrollHeight;return node}
 function clearChat(){coachMessages.length=0;$("chatFeed").innerHTML="";$("coachQ").value=""}

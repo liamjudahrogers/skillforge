@@ -1134,8 +1134,20 @@ function renderBuilder(){
 }
 function renderCustomWorkouts(){
  const saved=state.customWorkouts||[];
- $("customWorkoutsList").innerHTML=saved.map((w,i)=>`<div class="history"><strong>${esc(w.name)}</strong><p class="muted">${w.items.length} exercises · ${esc(w.items.map(x=>x.name).join(", "))}</p><button class="secondary smallbtn" data-delete-custom="${i}">Delete</button></div>`).join("")||'<p class="muted">Your saved workouts will show up here.</p>';
- $("customWorkoutsList").querySelectorAll("[data-delete-custom]").forEach(btn=>btn.onclick=()=>{state.customWorkouts.splice(Number(btn.dataset.deleteCustom),1);persist();renderCustomWorkouts();});
+ $("customWorkoutsList").innerHTML=saved.map((w,i)=>`<div class="history"><strong>${esc(w.name)}</strong><p class="muted">${w.items.length} exercises · ${esc(w.items.map(x=>x.name).join(", "))}</p><div class="row" style="flex-wrap:wrap;margin-top:10px"><button class="secondary smallbtn" data-edit-custom="${i}">Edit workout</button><button class="secondary smallbtn" data-delete-custom="${i}">Delete</button></div></div>`).join("")||'<p class="muted">Your saved workouts will show up here.</p>';
+ $("customWorkoutsList").querySelectorAll("[data-edit-custom]").forEach(btn=>btn.onclick=()=>{
+  const i=Number(btn.dataset.editCustom),w=state.customWorkouts[i];if(!w)return;
+  workoutBuilder=w.items.map(ex=>({...ex,sets:Number(ex.sets)||1,reps:String(ex.reps||"")}));
+  $("customWorkoutName").value=w.name;
+  state.editingCustomWorkoutId=w.id;
+  $("customWorkoutMessage").textContent="Editing saved workout. Save changes when you're done.";
+  renderBuilder();$("customWorkoutName").focus();$("tab-library").scrollIntoView({behavior:"smooth",block:"start"});
+ });
+ $("customWorkoutsList").querySelectorAll("[data-delete-custom]").forEach(btn=>btn.onclick=()=>{
+  const i=Number(btn.dataset.deleteCustom);if(!state.customWorkouts[i])return;
+  if(!confirm("Delete this saved workout? This can't be undone."))return;
+  state.customWorkouts.splice(i,1);persist();renderCustomWorkouts();
+ });
 }
 $("librarySearch").oninput=renderLibrary;
 $("libraryCategory").onchange=renderLibrary;
@@ -1143,8 +1155,15 @@ $("saveCustomWorkout").onclick=()=>{
  const name=$("customWorkoutName").value.trim();
  if(!name||!workoutBuilder.length){$("customWorkoutMessage").textContent="Add a name and at least one exercise first.";return;}
  state.customWorkouts=state.customWorkouts||[];
- state.customWorkouts.push({id:crypto.randomUUID(),name,items:workoutBuilder.map(ex=>({name:ex.name,sets:Number(ex.sets)||1,reps:ex.reps,category:ex.category}))});
- persist();workoutBuilder=[];$("customWorkoutName").value="";renderBuilder();renderCustomWorkouts();$("customWorkoutMessage").textContent="Workout saved!";
+ const items=workoutBuilder.map(ex=>({name:ex.name,sets:Math.max(1,Math.min(10,Number(ex.sets)||1)),reps:String(ex.reps||"").trim(),category:ex.category}));
+ if(!items.every(ex=>ex.name&&ex.reps)){ $("customWorkoutMessage").textContent="Check that every exercise has a name, sets, and reps/time.";return; }
+ const editingId=state.editingCustomWorkoutId;
+ if(editingId){
+  const index=state.customWorkouts.findIndex(w=>w.id===editingId);
+  if(index>=0)state.customWorkouts[index]={...state.customWorkouts[index],name,items};
+  else state.customWorkouts.push({id:crypto.randomUUID(),name,items});
+ }else state.customWorkouts.push({id:crypto.randomUUID(),name,items});
+ state.editingCustomWorkoutId=null;persist();workoutBuilder=[];$("customWorkoutName").value="";renderBuilder();renderCustomWorkouts();$("customWorkoutMessage").textContent=editingId?"Changes saved!":"Workout saved!";
 };
 renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));

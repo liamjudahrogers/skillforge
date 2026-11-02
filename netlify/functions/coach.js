@@ -284,6 +284,7 @@ ${safeMessage}`;
         body: JSON.stringify({
           model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
           instructions,
+          ...(action === "generate_plan" ? { text: { format: { type: "json_object" } } } : {}),
           input: [
             {
               role: "user",

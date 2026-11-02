@@ -644,6 +644,8 @@ hr,
   }
 }
 .set-rep-fields{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}.set-rep-fields label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.set-rep-fields input{width:64px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font:inherit}
+
+.upgrade-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(3,8,15,.82);backdrop-filter:blur(12px)}.upgrade-overlay.hidden{display:none!important}.upgrade-card{width:min(100%,520px);max-height:90vh;overflow:auto;margin:0;background:var(--panel-solid);border:1px solid var(--line-strong);border-radius:28px;padding:26px;box-shadow:var(--shadow)}.upgrade-card ul{padding-left:22px;color:var(--text);line-height:1.9}.upgrade-card button{width:100%;margin-top:10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -712,6 +714,17 @@ hr,
   </section>
   </main>
 
+  <div id="upgradeModal" class="upgrade-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle" aria-hidden="true">
+    <section class="upgrade-card">
+      <div class="eyebrow">UNLOCK YOUR FULL POTENTIAL</div><h2 id="upgradeTitle">SkillForge Pro</h2>
+      <p class="muted">Take your training further with more coaching and deeper tools.</p>
+      <ul><li>Custom workout builder</li><li>AI plan adjustments and full weekly rebuilds</li><li>Advanced progress insights</li><li>Full skill pathways</li><li>100 AI Coach messages per week</li></ul>
+      <p id="upgradeFeature" class="notice">This feature is part of Pro.</p>
+      <button id="upgradeBtn" type="button">Upgrade to Pro</button>
+      <button id="upgradeLaterBtn" class="secondary" type="button">Maybe later</button>
+      <p class="muted" id="upgradeMessage" role="status">Pro checkout will be available soon.</p>
+    </section>
+  </div>
   <main id="dashboard" class="hidden">
     <section class="hero">
       <div class="eyebrow">YOUR TRAINING SPACE</div>
@@ -807,8 +820,21 @@ hr,
 </div>
 <script>
 const $=id=>document.getElementById(id);
+const FREE_COACH_LIMIT=5;
+const PRO_COACH_LIMIT=100;
+const PRO_FEATURES=new Set(["customWorkouts","aiPlanAdjustments","advancedInsights","fullSkillPaths"]);
+function currentPlan(){return state.subscriptionPlan==="pro"?"pro":"free"}
+function isPro(){return currentPlan()==="pro"}
+function weekKey(date=new Date()){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));return d.getUTCFullYear()+"-W"+String(Math.ceil((((d-yearStart)/86400000)+1)/7)).padStart(2,"0")}
+function coachUsage(){const key=weekKey();if(!state.coachUsage||state.coachUsage.week!==key)state.coachUsage={week:key,count:0};return state.coachUsage}
+function canUseProFeature(feature){return isPro()||!PRO_FEATURES.has(feature)}
+function showUpgrade(feature="SkillForge Pro"){const modal=$("upgradeModal");if(!modal)return; $("upgradeFeature").textContent=feature;modal.classList.remove("hidden");modal.setAttribute("aria-hidden","false")}
+function hideUpgrade(){const modal=$("upgradeModal");if(!modal)return;modal.classList.add("hidden");modal.setAttribute("aria-hidden","true")}
+function renderPlanBadge(){const badge=$("planBadge");if(badge)badge.textContent=isPro()?"PRO":"FREE";const usage=$("coachUsageText");if(usage){const u=coachUsage(),limit=isPro()?PRO_COACH_LIMIT:FREE_COACH_LIMIT;usage.textContent=u.count+" / "+limit+" messages used this week"}}
 const defaultState={
   profile:null,
+  subscriptionPlan:"free",
+  coachUsage:{week:"",count:0},
   logs:[],
   checks:{},
   selectedDay:0,
@@ -999,7 +1025,7 @@ async function start() {
   await generatePlanForSavedProfile();
 }
 
-function showDashboard(){if(!state.profile)return;$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory();if($("skillSelect"))$("skillSelect").onchange=renderSkillPath}
+function showDashboard(){if(!state.profile)return;renderPlanBadge();$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("welcome").textContent="Let's build something.";const p=state.profile;$("summary").textContent=`${p.goal} · ${p.level} · ${p.days} days available · ${p.equipment}`;renderStats();renderDays();renderSession();renderWeek();renderHistory();if($("skillSelect"))$("skillSelect").onchange=renderSkillPath}
 
 function activePlan(){
   const source = state.generatedPlan || plan;
@@ -1092,6 +1118,7 @@ function accountLogs(){
     : (state.logs||[]);
 }
 function renderProgress(){
+  if(!canUseProFeature("advancedInsights")){$("progressOverview").innerHTML="";showUpgrade("Advanced progress insights");return;}
   const logs=accountLogs();
   const total=logs.length, minutes=logs.reduce((a,l)=>a+(+l.duration||0),0), exercises=logs.reduce((a,l)=>a+(+l.completed||0),0);
   const now=Date.now(), weekCount=logs.filter(l=>l.ts && now-l.ts<7*24*60*60*1000).length;
@@ -1164,12 +1191,14 @@ function renderLibrary(){
  $("libraryList").querySelectorAll("[data-add-exercise]").forEach(btn=>btn.onclick=()=>{const ex=exerciseLibrary[Number(btn.dataset.addExercise)];workoutBuilder.push({...ex});renderBuilder();});
 }
 function renderBuilder(){
+ if(!canUseProFeature("customWorkouts")){showUpgrade("Custom workout builder");return;}
  $("builderCount").textContent=workoutBuilder.length?workoutBuilder.length+" exercise(s) in your workout":"Choose exercises above to add them here.";
  $("builderList").innerHTML=workoutBuilder.map((ex,i)=>`<div class="history"><div class="row"><div><strong>${esc(ex.name)}</strong><div class="set-rep-fields"><label>Sets <input type="number" min="1" max="10" data-custom="sets" data-i="${i}" value="${ex.sets}"></label><label>Reps / time <input data-custom="reps" data-i="${i}" value="${esc(ex.reps)}"></label></div></div><button class="secondary smallbtn" data-remove-exercise="${i}">Remove</button></div></div>`).join("");
  $("builderList").querySelectorAll("input[data-custom]").forEach(input=>input.onchange=()=>{workoutBuilder[Number(input.dataset.i)][input.dataset.custom]=input.value;});
  $("builderList").querySelectorAll("[data-remove-exercise]").forEach(btn=>btn.onclick=()=>{workoutBuilder.splice(Number(btn.dataset.removeExercise),1);renderBuilder();});
 }
 function renderCustomWorkouts(){
+ if(!canUseProFeature("customWorkouts")){showUpgrade("Custom workouts");return;}
  const saved=state.customWorkouts||[];
  $("customWorkoutsList").innerHTML=saved.map((w,i)=>`<div class="history"><strong>${esc(w.name)}</strong><p class="muted">${w.items.length} exercises · ${esc(w.items.map(x=>x.name).join(", "))}</p><div class="row" style="flex-wrap:wrap;margin-top:10px"><button class="smallbtn" data-start-custom="${i}">Start workout</button><button class="secondary smallbtn" data-edit-custom="${i}">Edit workout</button><button class="secondary smallbtn" data-delete-custom="${i}">Delete</button></div></div>`).join("")||'<p class="muted">Your saved workouts will show up here.</p>';
  $("customWorkoutsList").querySelectorAll("[data-start-custom]").forEach(btn=>btn.onclick=()=>{const w=state.customWorkouts[Number(btn.dataset.startCustom)];if(!w)return;state.activeCustomWorkout={...w,items:w.items.map(ex=>({...ex}))};state.selectedDay=0;persist();renderSession();switchTab("today");$("saveMessage").textContent="Custom workout loaded — check off exercises as you go.";});
@@ -1205,6 +1234,7 @@ $("saveCustomWorkout").onclick=()=>{
 };
 renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+$("upgradeLaterBtn").onclick=hideUpgrade;$("upgradeModal").addEventListener("click",e=>{if(e.target===$("upgradeModal"))hideUpgrade()});$("upgradeBtn").onclick=()=>{$("upgradeMessage").textContent="Pro checkout is not connected yet. Your account remains on Free.";};
 $("startBtn").onclick=start;
 $("editProfileBtn").onclick=()=>{if(!state.profile)return;const p=state.profile;$("goal").value=p.goal||"General calisthenics";$("level").value=p.level||"Intermediate";$("days").value=String(p.days||5);$("equipment").value=p.equipment||"Pull-up bar + parallettes";$("priority").value=p.priority||"Balanced training";$("pullups").value=p.pullups||"Not sure";$("dips").value=p.dips||"Not sure";$("recovery").value=p.recovery||"Good";$("startBtn").textContent="Save profile & rebuild plan →";$("cancelProfileEditBtn").classList.remove("hidden");$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
 $("cancelProfileEditBtn").onclick=()=>{$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("cancelProfileEditBtn").classList.add("hidden");$("startBtn").textContent="Build my dashboard →";$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
@@ -1367,7 +1397,7 @@ function addChatMessage(role,content,extra=""){const feed=$("chatFeed"),node=doc
 function clearChat(){coachMessages.length=0;$("chatFeed").innerHTML="";$("coachQ").value=""}
 $("clearChat").onclick=clearChat;
 document.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>{$("coachQ").value=b.dataset.prompt;$("coachQ").focus()});
-async function sendCoachMessage(){const q=$("coachQ").value.trim(),energy=$("energy").value,button=$("askCoach"),input=$("coachQ");if(!q||button.disabled)return;if(!state.profile){addChatMessage("assistant","Finish your training setup first so I can personalize my advice.");return}input.value="";coachMessages.push({role:"user",content:q});addChatMessage("user",q);const pending=addChatMessage("assistant","Thinking through your question…","pending");button.disabled=true;button.textContent="Thinking…";input.disabled=true;try{const response=await fetch("/.netlify/functions/coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message: coachMessages[coachMessages.length - 1]?.content || coachMessages[coachMessages.length - 1]?.text || "",
+async function sendCoachMessage(){const usage=coachUsage(),limit=isPro()?PRO_COACH_LIMIT:FREE_COACH_LIMIT;if(usage.count>=limit){showUpgrade("AI Coach message limit reached");return;}const q=$("coachQ").value.trim(),energy=$("energy").value,button=$("askCoach"),input=$("coachQ");if(!q||button.disabled)return;if(!state.profile){addChatMessage("assistant","Finish your training setup first so I can personalize my advice.");return}input.value="";coachMessages.push({role:"user",content:q});addChatMessage("user",q);const pending=addChatMessage("assistant","Thinking through your question…","pending");button.disabled=true;button.textContent="Thinking…";input.disabled=true;try{const response=await fetch("/.netlify/functions/coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message: coachMessages[coachMessages.length - 1]?.content || coachMessages[coachMessages.length - 1]?.text || "",
 messages: coachMessages.slice(-8),profile:state.profile,energy,recentLogs:state.logs.slice(-6).map(l=>({name:l.name,date:l.date,completed:l.completed,total:l.total,duration:l.duration,exercises:Array.isArray(l.exercises)?l.exercises.map(ex=>({name:ex.name,checked:Boolean(ex.checked),sets:ex.sets??null,reps:ex.reps??null})):[]})),weekAdjustment:state.weekAdjustment})});let data={};try{data=await response.json()}catch{}if(!response.ok)throw new Error(data.error||"The coach couldn't respond. Try again in a moment.");const rawAnswer = String(
   data.reply ||
   data.answer ||
@@ -1394,7 +1424,7 @@ try {
   }
 } catch {
   // The response is ordinary text, so leave it unchanged.
-};if(!answer)throw new Error("I didn't get an answer back. Please try again.");coachMessages.push({role:"assistant",content:answer});pending.textContent=answer;pending.classList.remove("pending");}catch(err){pending.textContent=err.message||"The live coach couldn't connect. Check that the Netlify Function and private API key are configured.";pending.classList.remove("pending");pending.style.background="#fff5ed";pending.style.borderColor="#f0d5c2";coachMessages.pop();}finally{button.disabled=false;button.textContent="Send ↗";input.disabled=false;input.focus()}}
+};if(!answer)throw new Error("I didn't get an answer back. Please try again.");coachMessages.push({role:"assistant",content:answer});usage.count+=1;state.coachUsage=usage;persist();renderPlanBadge();pending.textContent=answer;pending.classList.remove("pending");}catch(err){pending.textContent=err.message||"The live coach couldn't connect. Check that the Netlify Function and private API key are configured.";pending.classList.remove("pending");pending.style.background="#fff5ed";pending.style.borderColor="#f0d5c2";coachMessages.pop();}finally{button.disabled=false;button.textContent="Send ↗";input.disabled=false;input.focus()}}
 $("askCoach").onclick=sendCoachMessage;
 $("coachQ").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();sendCoachMessage()}});
 $("updatePlanBtn").onclick=()=>{const feeling=$("weekFeeling").value,sessions=$("weekSessions").value;let mode="steady",msg="Keep the plan steady next week. Aim for consistent attendance and clean technique before increasing difficulty.";if(feeling==="Sore or run-down"||feeling==="Too hard"){mode="easy";msg="Next week will be a lighter week: fewer working sets on most strength exercises. Prioritize sleep, food, and recovery; don't push through pain.";}else if(feeling==="Too easy"&&sessions==="4-5"){mode="progress";msg="You completed most sessions and reported that the work felt easy, so a few selected exercises get a small rep or hold-time increase. Keep form clean and don't add extra sets automatically.";}else if(feeling==="Too easy"){msg="You reported that training felt easy, but consistency comes first. Keep the plan steady until you complete more sessions, then review again.";}state.weekAdjustment=mode;persist();renderDays();renderSession();renderWeek();$("planFeedback").textContent=msg;$("planFeedback").classList.remove("hidden")};

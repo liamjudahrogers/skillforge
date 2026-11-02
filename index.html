@@ -763,7 +763,7 @@ hr,
         <h2>Workout Library</h2>
         <p class="muted">Pick exercises, make your own routine, and save it for later.</p>
         <div class="field"><label for="librarySearch">Find an exercise</label><input id="librarySearch" placeholder="Search push-ups, core, handstand…"></div>
-        <div class="field"><label for="libraryCategory">Category</label><select id="libraryCategory"><option>All</option><option>Push</option><option>Pull</option><option>Legs</option><option>Core</option><option>Skills</option><option>Warm-up</option></select></div>
+        <div class="field"><label for="libraryCategory">Category</label><select id="libraryCategory"><option>All</option><option>Push</option><option>Pull</option><option>Legs</option><option>Core</option><option>Skills</option><option>Cardio</option><option>Warm-up</option></select></div>
         <div id="libraryList"></div>
       </div>
       <div class="panel">
@@ -1146,7 +1146,12 @@ const exerciseLibrary=[
 {name:"Planche lean",category:"Skills",difficulty:"Advanced",equipment:"Parallettes optional",sets:3,reps:"8–15 sec",tip:"Keep holds short and pain-free; build gradually."},
 {name:"Tuck L-sit",category:"Skills",difficulty:"Intermediate",equipment:"Parallettes",sets:3,reps:"8–15 sec",tip:"Keep shoulders active and use a manageable tuck."},
 {name:"Wrist and shoulder warm-up",category:"Warm-up",difficulty:"Beginner",equipment:"None",sets:1,reps:"3–5 min",tip:"Use gentle, comfortable movement."},
-{name:"General warm-up",category:"Warm-up",difficulty:"Beginner",equipment:"None",sets:1,reps:"5 min",tip:"Start easy and gradually get moving."}
+{name:"General warm-up",category:"Warm-up",difficulty:"Beginner",equipment:"None",sets:1,reps:"5 min",tip:"Start easy and gradually get moving."},
+{name:"Brisk walking",category:"Cardio",difficulty:"Beginner",equipment:"None",sets:1,reps:"10–30 min",tip:"Choose a comfortable pace where you can still talk."},
+{name:"Easy cycling",category:"Cardio",difficulty:"Beginner",equipment:"Bike",sets:1,reps:"10–30 min",tip:"Keep the effort conversational and use safe routes and gear."},
+{name:"Easy jogging",category:"Cardio",difficulty:"Beginner",equipment:"None",sets:1,reps:"5–20 min",tip:"Start at an easy pace; walk breaks are fine."},
+{name:"Swimming",category:"Cardio",difficulty:"Beginner",equipment:"Pool",sets:1,reps:"10–20 min",tip:"Swim at a relaxed pace in a supervised pool."},
+{name:"Dance / follow-along",category:"Cardio",difficulty:"Beginner",equipment:"None",sets:1,reps:"10–20 min",tip:"Pick music you enjoy and move at a comfortable pace."}
 ];
 let workoutBuilder=[];
 function renderLibrary(){

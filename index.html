@@ -1289,6 +1289,90 @@ body:has(#dashboard:not(.hidden)){padding-bottom:calc(112px + env(safe-area-inse
 @media(min-width:641px){#dashboard nav.nav{width:min(calc(100% - 40px),680px);}}
 @media(prefers-reduced-motion:reduce){#dashboard nav.nav button{transition:none;}}
 
+
+/* SkillForge Studio polish — glass surfaces, calmer hierarchy, mobile dock */
+:root{--sf-glass:rgba(19,29,46,.66);--sf-glass-edge:rgba(220,239,255,.13);--sf-green:#9de8c9}
+body{background:radial-gradient(ellipse at 12% -8%,rgba(79,145,220,.22),transparent 34rem),radial-gradient(ellipse at 92% 18%,rgba(107,93,195,.15),transparent 31rem),radial-gradient(ellipse at 50% 100%,rgba(58,132,151,.08),transparent 40rem),#080c14}
+section,.card,.panel,.history,.notice,.chat-shell,.chat-compose,.coach-intro,.metric,.day-card,.exercise-card{border-color:var(--sf-glass-edge);background:linear-gradient(145deg,rgba(255,255,255,.045),transparent 42%),var(--sf-glass);box-shadow:0 16px 44px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035);backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%)}
+.hero{position:relative;overflow:hidden;background:radial-gradient(ellipse at 100% 0%,rgba(111,183,255,.12),transparent 52%),linear-gradient(145deg,rgba(255,255,255,.045),transparent 45%),var(--sf-glass)}
+.hero:after{content:"";position:absolute;width:220px;height:220px;right:-100px;top:-130px;border-radius:50%;background:rgba(115,185,255,.09);filter:blur(5px);pointer-events:none}
+h1,h2,h3{letter-spacing:-.045em}.eyebrow{letter-spacing:.15em;font-size:.68rem}
+button.secondary,.secondary,.btn-secondary,.suggestion{background:rgba(255,255,255,.045);border-color:rgba(215,235,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+button.secondary:hover,.secondary:hover,.btn-secondary:hover,.suggestion:hover{background:rgba(140,200,255,.10);border-color:rgba(160,215,255,.30)}
+button.primary,button[type=submit],.primary,.btn-primary{background:linear-gradient(135deg,#c8f3e2,#9bd9ff);border-color:rgba(225,250,255,.55);box-shadow:0 8px 28px rgba(104,194,220,.16)}
+input,select,textarea{background:rgba(5,11,20,.48);border-color:rgba(210,232,255,.14);border-radius:16px}
+.metric strong{font-size:clamp(1.55rem,3vw,2.1rem);letter-spacing:-.055em}
+.nav{gap:5px;padding:7px;border:1px solid rgba(224,241,255,.14);background:rgba(12,19,31,.72);box-shadow:0 14px 40px rgba(0,0,0,.24);backdrop-filter:blur(26px) saturate(145%);-webkit-backdrop-filter:blur(26px) saturate(145%)}
+.nav button{border-radius:999px;min-height:44px}.nav button.active{background:linear-gradient(135deg,#c4f0df,#a6ddff);color:#0b1720}.navicon{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:50%;background:rgba(255,255,255,.055)}
+#tab-coach>.panel{padding:clamp(16px,3vw,28px)}
+.coach-intro{display:flex;align-items:center;gap:13px;padding:15px 17px;border-radius:22px;margin:16px 0}
+.coach-avatar{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:50%;color:#071421;font-size:19px;background:linear-gradient(145deg,#c6f4e2,#8ecfff);box-shadow:0 0 24px rgba(133,210,255,.16)}
+.chat-shell{overflow:hidden;border-radius:26px;padding:0;background:linear-gradient(160deg,rgba(255,255,255,.035),transparent 55%),rgba(7,13,22,.52)}
+.chat-head{padding:14px 17px;border-bottom:1px solid rgba(220,239,255,.09)}
+.chat-feed{min-height:150px;max-height:min(48vh,520px);overflow:auto;padding:18px;scroll-behavior:smooth}
+.chat-msg{width:fit-content;max-width:min(88%,680px);padding:13px 16px;margin:12px 0;border-radius:22px;background:rgba(255,255,255,.055);border:1px solid rgba(220,239,255,.10);box-shadow:0 5px 18px rgba(0,0,0,.08)}
+.chat-msg.user{border-radius:22px 22px 7px 22px;background:linear-gradient(145deg,rgba(116,188,255,.19),rgba(116,188,255,.09));border-color:rgba(145,207,255,.19)}
+.chat-msg.assistant{border-radius:22px 22px 22px 7px}
+.chat-compose{margin:12px;padding:15px;border-radius:22px;background:rgba(15,26,41,.74);border:1px solid rgba(200,230,255,.14)}
+.chat-compose textarea{min-height:84px;resize:vertical;border:0;background:transparent;box-shadow:none;padding:8px 2px}.chat-compose textarea:focus{background:transparent}
+.coach-input-meta{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}.chat-actions{align-items:center;gap:12px;margin-top:12px}
+#askCoach{width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#c4f0df,#9bd9ff);color:#091522}
+.suggestions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px}.suggestion{border-radius:999px;padding:9px 14px;font-size:.86rem}.tag{border-radius:999px}.footer{opacity:.72}
+@media(max-width:640px){
+ body{padding-bottom:96px}#dashboard{padding-bottom:18px}
+ #dashboard>.nav{position:fixed;z-index:100;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),460px);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:7px;border-radius:26px;background:rgba(10,17,28,.82);border:1px solid rgba(225,241,255,.17);box-shadow:0 18px 55px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.06)}
+ #dashboard>.nav button{min-width:0;min-height:54px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;font-size:10px;line-height:1.1;white-space:nowrap}
+ #dashboard>.nav .navicon{width:26px;height:26px;font-size:15px;background:transparent}
+ #dashboard>.nav button.active{box-shadow:0 3px 14px rgba(125,200,255,.12)}
+ .hero{padding:22px 19px;border-radius:28px}.grid3{gap:8px}.metric{padding:12px 10px;border-radius:20px}.metric small{font-size:10px}.metric strong{font-size:1.45rem}
+ #tab-coach>.panel{padding:14px;border-radius:26px}.chat-feed{padding:12px;max-height:52vh}.chat-compose{margin:8px;padding:12px;border-radius:20px}.chat-actions small{max-width:70%;font-size:11px}.suggestions{gap:7px}.suggestion{padding:8px 11px;font-size:12px}
+}
+@media(prefers-reduced-transparency:reduce){section,.card,.panel,.history,.notice,.chat-shell,.chat-compose,.coach-intro,.metric,.day-card,.exercise-card,.nav{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--panel-solid)}}
+
+
+/* Fine-detail pass: tactile controls, readable focus, resilient mobile layout */
+:root{scrollbar-color:rgba(150,190,225,.28) transparent;scrollbar-width:thin}
+*{scrollbar-width:thin;scrollbar-color:rgba(150,190,225,.24) transparent}
+button,a,[role=button]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform 160ms ease,background 180ms ease,border-color 180ms ease,box-shadow 180ms ease,filter 180ms ease}
+button:active{transform:scale(.975)}
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:2px solid rgba(164,220,255,.88);outline-offset:3px}
+header{gap:14px}
+header .header-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#headerUpgradeBtn{border-radius:999px;padding-inline:17px;white-space:nowrap;box-shadow:0 6px 22px rgba(119,195,255,.13)}
+#headerUpgradeBtn:before{content:"✦";margin-right:7px;font-size:.9em}
+.panel{border-radius:26px}
+.panel h2{line-height:1.12}
+.field label{display:block;margin-bottom:8px}
+.progressbar{overflow:hidden;border-radius:999px;background:rgba(255,255,255,.07)}
+.progressbar>span{border-radius:inherit;transition:width 360ms cubic-bezier(.2,.75,.25,1)}
+.notice{border-radius:18px}
+.tag{padding:6px 10px;border:1px solid rgba(220,239,255,.11);background:rgba(255,255,255,.045)}
+.chat-clear{font-size:12px;padding:8px 12px;min-height:34px}
+#chatFeed:empty{display:grid;place-items:center}
+#chatFeed:empty:before{content:"Your coaching conversation starts here.";display:block;text-align:center;max-width:230px;color:var(--muted);font-size:13px;line-height:1.5;padding:22px 0}
+@media(hover:hover) and (pointer:fine){
+ .panel,.metric,.workout-start-card{transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease}
+ .metric:hover{transform:translateY(-2px);border-color:rgba(180,220,255,.2)}
+ .panel:hover{border-color:rgba(190,225,255,.16)}
+}
+@media(max-width:640px){
+ header{align-items:center;gap:10px;padding-top:max(12px,env(safe-area-inset-top))}
+ header .brand{min-width:0;flex:1}
+ header .brand strong{font-size:15px}
+ header .header-actions{gap:6px}
+ #headerUpgradeBtn{min-height:38px;padding:8px 12px;font-size:12px}
+ #signOutBtn,#resetBtn{min-height:36px;padding:7px 10px;font-size:11px}
+ .panel{padding:17px;border-radius:24px}
+ .row{gap:10px}
+ .dayrow{gap:6px;overflow-x:auto;padding-bottom:4px}
+ .dayrow button{flex:0 0 auto}
+ .chat-msg{max-width:92%;overflow-wrap:anywhere}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

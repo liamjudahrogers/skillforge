@@ -1731,10 +1731,14 @@ async function initializeApp() {
       $("authScreen").classList.remove("hidden");
       $("onboarding").classList.add("hidden");
       $("dashboard").classList.add("hidden");
+      hideUpgrade();
       return;
     }
 
+    // Authentication comes first: Pro checkout is only shown to signed-in users.
     $("authScreen").classList.add("hidden");
+    $("upgradeModal").classList.add("hidden");
+    $("upgradeModal").setAttribute("aria-hidden","true");
     $("signOutBtn").hidden=false;
     await refreshSubscriptionEntitlement();
 

@@ -1,5 +1,5 @@
 
-exports.handler = async (event) => {
+const handleCoachRequest = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, headers: { "Content-Type": "application/json", "Allow": "POST" }, body: JSON.stringify({ error: "Use POST for coaching requests." }) };
   if (!event.body || event.body.length > 12000) return { statusCode: 413, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Request is empty or too large. Please shorten it and try again." }) };
 
@@ -275,6 +275,7 @@ ${JSON.stringify(
 Current question:
 ${safeMessage}`;
 
+    const openaiBaseUrl = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
     let response;
@@ -285,7 +286,7 @@ ${safeMessage}`;
         ...(action === "generate_plan" ? { text: { format: { type: "json_object" } } } : {}),
         input: [{ role: "user", content: userContent }]
       };
-      response = await fetch("https://api.openai.com/v1/responses", {
+      response = await fetch(`${openaiBaseUrl}/responses`, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -295,7 +296,7 @@ ${safeMessage}`;
         const firstError = await response.clone().json().catch(() => ({}));
         if (/json|format|unsupported/i.test(firstError?.error?.message || "")) {
           delete requestBody.text;
-          response = await fetch("https://api.openai.com/v1/responses", {
+          response = await fetch(`${openaiBaseUrl}/responses`, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify(requestBody),
@@ -457,4 +458,14 @@ return {
       }),
     };
   }
+};
+
+// Modern (v2) Netlify Function entry point. Translates the Web Request into the
+// event shape used above and the result back into a Web Response.
+export default async (req) => {
+  const headers = {};
+  req.headers.forEach((value, key) => { headers[key] = value; });
+  const body = req.method === "GET" || req.method === "HEAD" ? "" : await req.text();
+  const result = await handleCoachRequest({ httpMethod: req.method, headers, body });
+  return new Response(result.body, { status: result.statusCode, headers: result.headers });
 };

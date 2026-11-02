@@ -1,4 +1,9 @@
-
 [build]
   publish = "."
   functions = "netlify/functions"
+
+[build.environment]
+  # The Supabase project URL and publishable (anon) key are public by design and are
+  # intentionally embedded in index.html for the browser client. Private keys
+  # (OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY) are still scanned.
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY,SUPABASE_PUBLISHABLE_KEY"

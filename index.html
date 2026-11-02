@@ -805,9 +805,9 @@ async function syncWorkoutLogs(){
   persist();
 }
 async function saveProfileToSupabase() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-
-  if (!user) return;
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
+  if (!user || !state.profile) return;
 
   const { error } = await supabaseClient
     .from("profiles")
@@ -816,12 +816,38 @@ async function saveProfileToSupabase() {
       display_name: user.email,
       experience_level: state.profile.level,
       training_goal: state.profile.goal,
+      training_profile: state.profile,
       updated_at: new Date().toISOString()
     });
 
-  if (error) {
-    console.error("Profile save failed:", error.message);
+  if (error) throw error;
+}
+
+async function loadProfileFromSupabase() {
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
+  if (!user) return null;
+
+  const { data, error } = await supabaseClient
+    .from("profiles")
+    .select("training_profile, experience_level, training_goal")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (data?.training_profile && typeof data.training_profile === "object") {
+    return data.training_profile;
   }
+
+  // Backward compatibility for accounts created before full profile sync.
+  if (data?.experience_level || data?.training_goal) {
+    return {
+      ...defaultState.profile,
+      level: data.experience_level || defaultState.profile?.level || "Intermediate",
+      goal: data.training_goal || "General calisthenics"
+    };
+  }
+  return null;
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
@@ -1112,8 +1138,23 @@ async function initializeApp() {
       return;
     }
 
+    $("authScreen").classList.add("hidden");
+
+    // Restore the account's saved onboarding profile before deciding
+    // whether this device needs onboarding.
+    let cloudProfile = null;
+    try {
+      cloudProfile = await loadProfileFromSupabase();
+    } catch (profileError) {
+      console.error("Profile sync on startup failed:", profileError);
+    }
+
+    if (cloudProfile) {
+      state.profile = { ...cloudProfile };
+      persist();
+    }
+
     if (state.profile) {
-      $("authScreen").classList.add("hidden");
       try { await syncWorkoutLogs(); } catch (syncError) { console.error("Workout sync on startup failed:",syncError); }
       showDashboard();
 
@@ -1121,7 +1162,6 @@ async function initializeApp() {
         await generatePlanForSavedProfile();
       }
     } else {
-      $("authScreen").classList.add("hidden");
       $("onboarding").classList.remove("hidden");
       $("dashboard").classList.add("hidden");
     }

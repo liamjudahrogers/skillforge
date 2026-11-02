@@ -943,9 +943,12 @@ async function generatePlanForSavedProfile() {
   $("welcome").textContent = "Building your personalized plan...";
 
   try {
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session?.access_token) throw new Error("Please sign in again to generate your plan.");
     const response = await fetch("/.netlify/functions/coach", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({
         action: "generate_plan",
         profile: state.profile,
@@ -1428,7 +1431,7 @@ function addChatMessage(role,content,extra=""){const feed=$("chatFeed"),node=doc
 function clearChat(){coachMessages.length=0;$("chatFeed").innerHTML="";$("coachQ").value=""}
 $("clearChat").onclick=clearChat;
 document.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>{$("coachQ").value=b.dataset.prompt;$("coachQ").focus()});
-async function sendCoachMessage(){const usage=coachUsage(),limit=isPro()?PRO_COACH_LIMIT:FREE_COACH_LIMIT;if(usage.count>=limit){showUpgrade("AI Coach message limit reached");return;}const q=$("coachQ").value.trim(),energy=$("energy").value,button=$("askCoach"),input=$("coachQ");if(!q||button.disabled)return;if(!state.profile){addChatMessage("assistant","Finish your training setup first so I can personalize my advice.");return}input.value="";coachMessages.push({role:"user",content:q});addChatMessage("user",q);const pending=addChatMessage("assistant","Thinking through your question…","pending");button.disabled=true;button.textContent="Thinking…";input.disabled=true;try{const response=await fetch("/.netlify/functions/coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message: coachMessages[coachMessages.length - 1]?.content || coachMessages[coachMessages.length - 1]?.text || "",
+async function sendCoachMessage(){const usage=coachUsage(),limit=isPro()?PRO_COACH_LIMIT:FREE_COACH_LIMIT;if(usage.count>=limit){showUpgrade("AI Coach message limit reached");return;}const q=$("coachQ").value.trim(),energy=$("energy").value,button=$("askCoach"),input=$("coachQ");if(!q||button.disabled)return;if(!state.profile){addChatMessage("assistant","Finish your training setup first so I can personalize my advice.");return}input.value="";coachMessages.push({role:"user",content:q});addChatMessage("user",q);const pending=addChatMessage("assistant","Thinking through your question…","pending");button.disabled=true;button.textContent="Thinking…";input.disabled=true;try{const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();if(sessionError)throw sessionError;if(!session?.access_token)throw new Error("Please sign in again to use AI Coach.");const response=await fetch("/.netlify/functions/coach",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({message: coachMessages[coachMessages.length - 1]?.content || coachMessages[coachMessages.length - 1]?.text || "",
 messages: coachMessages.slice(-8),profile:state.profile,energy,recentLogs:state.logs.slice(-6).map(l=>({name:l.name,date:l.date,completed:l.completed,total:l.total,duration:l.duration,exercises:Array.isArray(l.exercises)?l.exercises.map(ex=>({name:ex.name,checked:Boolean(ex.checked),sets:ex.sets??null,reps:ex.reps??null})):[]})),weekAdjustment:state.weekAdjustment})});let data={};try{data=await response.json()}catch{}if(!response.ok)throw new Error(data.error||"The coach couldn't respond. Try again in a moment.");const rawAnswer = String(
   data.reply ||
   data.answer ||

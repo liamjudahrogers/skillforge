@@ -1235,7 +1235,28 @@ $("saveCustomWorkout").onclick=()=>{
 };
 renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
-$("upgradeLaterBtn").onclick=hideUpgrade;$("upgradeModal").addEventListener("click",e=>{if(e.target===$("upgradeModal"))hideUpgrade()});$("upgradeBtn").onclick=()=>{$("upgradeMessage").textContent="Pro checkout is not connected yet. Your account remains on Free.";};
+$("upgradeLaterBtn").onclick=hideUpgrade;
+$("upgradeModal").addEventListener("click",e=>{if(e.target===$("upgradeModal"))hideUpgrade()});
+let checkoutInProgress=false;
+$("upgradeBtn").onclick=async()=>{
+  const button=$("upgradeBtn"),message=$("upgradeMessage");
+  if(checkoutInProgress)return;
+  checkoutInProgress=true;button.disabled=true;button.textContent="Opening secure checkout…";message.textContent="Connecting to Stripe securely…";
+  try{
+    const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!session){message.textContent="Please sign in first, then try upgrading.";return;}
+    const {data,error}=await supabaseClient.functions.invoke("stripe-checkout");
+    if(error)throw error;
+    if(!data||!data.url)throw new Error("Checkout link was not returned. Please try again.");
+    window.location.assign(data.url);
+  }catch(error){
+    console.error("Stripe checkout launch failed:",error);
+    message.textContent=error.message||"Couldn't open checkout. Please try again.";
+  }finally{
+    checkoutInProgress=false;button.disabled=false;button.textContent="Upgrade to Pro";
+  }
+};
 $("startBtn").onclick=start;
 $("editProfileBtn").onclick=()=>{if(!state.profile)return;const p=state.profile;$("goal").value=p.goal||"General calisthenics";$("level").value=p.level||"Intermediate";$("days").value=String(p.days||5);$("equipment").value=p.equipment||"Pull-up bar + parallettes";$("priority").value=p.priority||"Balanced training";$("pullups").value=p.pullups||"Not sure";$("dips").value=p.dips||"Not sure";$("recovery").value=p.recovery||"Good";$("startBtn").textContent="Save profile & rebuild plan →";$("cancelProfileEditBtn").classList.remove("hidden");$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};
 $("cancelProfileEditBtn").onclick=()=>{$("onboarding").classList.add("hidden");$("dashboard").classList.remove("hidden");$("cancelProfileEditBtn").classList.add("hidden");$("startBtn").textContent="Build my dashboard →";$("onboarding").scrollIntoView({behavior:"smooth",block:"start"});};

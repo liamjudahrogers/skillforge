@@ -683,7 +683,8 @@ hr,
 
     <div class="field">
       <label for="authPassword">Password</label>
-      <input id="authPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+      <input id="authPassword" type="password" placeholder="Uppercase, lowercase, number, symbol" autocomplete="new-password" aria-describedby="passwordHint">
+      <small id="passwordHint" class="muted">Use at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol.</small>
     </div>
 
     <p id="authMessage" class="muted" role="status"></p>
@@ -1292,11 +1293,22 @@ $("authToggle").onclick = () => {
 
   $("authMessage").textContent = "";
 };
+function passwordMeetsRequirements(password) {
+  return /[a-z]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[!@#$%^&*()_+\-=[\]{};\'\":|<>?,.\/`~]/.test(password);
+}
+
 $("authBtn").onclick = async () => {
   const email = $("authEmail").value.trim();
   const password = $("authPassword").value;
 
   $("authMessage").textContent = "";
+  if (authMode === "signup" && !passwordMeetsRequirements(password)) {
+    $("authMessage").textContent = "Password needs at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol.";
+    return;
+  }
   $("authBtn").disabled = true;
   $("authBtn").textContent = "Please wait…";
 

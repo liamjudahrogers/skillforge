@@ -981,6 +981,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sf-loading-surface::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(100deg,transparent,rgba(155,216,255,.055),transparent); animation:sf-shimmer 1.8s ease-in-out infinite; pointer-events:none; }
 @keyframes sf-shimmer { to { transform:translateX(100%); } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; } }
+ .header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.header-actions #headerUpgradeBtn{white-space:nowrap}@media(max-width:520px){header.top{gap:10px;flex-wrap:wrap}.header-actions{margin-left:auto}.header-actions #headerUpgradeBtn{font-size:.78rem;padding:8px 10px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -998,7 +999,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   <header class="top">
     <div class="logo">✳</div>
     <div class="brand"><strong>skillforge<span style="color:var(--accent)">.</span></strong><span class="eyebrow">CALISTHENICS, WITH INTENTION</span></div>
-    <div style="display:flex;gap:8px"><button class="secondary smallbtn" id="signOutBtn" type="button" hidden>Sign out</button><button class="secondary smallbtn" id="resetBtn" title="Clear saved data">Reset</button></div>
+    <div class="header-actions"><button class="primary smallbtn" id="headerUpgradeBtn" type="button">Upgrade to Pro</button><button class="secondary smallbtn" id="signOutBtn" type="button" hidden>Sign out</button><button class="secondary smallbtn" id="resetBtn" title="Clear saved data">Reset</button></div>
   </header>
 
 <main id="authScreen" class="hidden">
@@ -1586,6 +1587,7 @@ $("saveCustomWorkout").onclick=()=>{
 renderLibrary();renderBuilder();renderCustomWorkouts();
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 $("upgradeLaterBtn").onclick=hideUpgrade;
+$("headerUpgradeBtn").onclick=()=>showUpgrade("SkillForge Pro");
 $("upgradeModal").addEventListener("click",e=>{if(e.target===$("upgradeModal"))hideUpgrade()});
 let checkoutInProgress=false;
 $("upgradeBtn").onclick=async()=>{

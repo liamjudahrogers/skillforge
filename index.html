@@ -770,6 +770,54 @@ label { color: #dce7f4; }
   nav button,[data-tab],.tab-button { width: 100%; padding: 9px 7px; font-size: .82rem; }
   .day-card { padding: 17px; }
 }
+
+/* Consistent button states: disabled controls stay legible, enabled CTAs stay branded */
+button:disabled,
+button[disabled],
+button[aria-disabled="true"] {
+  opacity: 1;
+  cursor: not-allowed;
+  filter: none;
+}
+button.primary:disabled,
+button.primary[disabled],
+button[type="submit"]:disabled,
+.primary:disabled,
+.btn-primary:disabled {
+  color: #9db1c6;
+  border-color: #34465b;
+  background: #1a293a;
+  box-shadow: none;
+}
+#upgradeBtn,
+#authBtn,
+#startBtn,
+#retryPlanBtn {
+  background: linear-gradient(135deg, #b8e5ff, #83caff);
+  color: #071321;
+  border: 1px solid rgba(184,229,255,.42);
+  font-weight: 700;
+}
+#upgradeBtn:disabled,
+#authBtn:disabled,
+#startBtn:disabled,
+#retryPlanBtn:disabled {
+  background: #243449;
+  color: #b4c6d8;
+  border-color: #3a4e64;
+  opacity: 1;
+}
+button.secondary:disabled,
+.secondary:disabled {
+  color: #8ea2b8;
+  background: #121e2d;
+  border-color: #2b3b4e;
+  opacity: 1;
+}
+button:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

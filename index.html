@@ -1766,3 +1766,55 @@ initializeApp();
 </script>
 </body>
 </html>
+
+/* Consistent, intentional button system */
+button {
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #172438;
+  color: var(--text);
+  min-height: 42px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -.015em;
+  transition: background .16s ease, border-color .16s ease, transform .16s ease;
+}
+button:hover:not(:disabled) {
+  background: #20334b;
+  border-color: rgba(166,220,255,.42);
+}
+button:active:not(:disabled) { transform: translateY(1px); }
+button:not(.secondary):not(.daybtn):not([data-tab]):not(.tab-button):not(.smallbtn) {
+  background: var(--blue);
+  color: #071321;
+  border-color: transparent;
+}
+button:not(.secondary):not(.daybtn):not([data-tab]):not(.tab-button):not(.smallbtn):hover:not(:disabled) {
+  background: #c0e8ff;
+}
+button.secondary, button.daybtn, button[data-tab], button.tab-button, button.smallbtn {
+  background: #152236;
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+}
+button.daybtn.active, button[data-tab].active, button.tab-button.active {
+  background: var(--blue);
+  color: #071321;
+  border-color: transparent;
+}
+#startWorkoutBtn {
+  width: auto;
+  min-width: 160px;
+  margin-top: 8px;
+}
+.workout-start-card {
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: #0e1928;
+}
+.workout-start-card p { margin: 0 0 12px; }

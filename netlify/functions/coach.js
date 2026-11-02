@@ -14,6 +14,49 @@ exports.handler = async (event) => {
       weekAdjustment = "steady",
     } = JSON.parse(event.body || "{}");
 
+    // Reject malformed client context and bound everything sent to the model.
+    if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+      return { statusCode: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Invalid training profile." }) };
+    }
+    if (!Array.isArray(messages) || !Array.isArray(recentLogs)) {
+      return { statusCode: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Invalid coaching history." }) };
+    }
+    if (typeof energy !== "string" || typeof weekAdjustment !== "string") {
+      return { statusCode: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Invalid training context." }) };
+    }
+
+    const safeProfile = Object.fromEntries(
+      Object.entries(profile).filter(([key, value]) =>
+        typeof key === "string" && key.length <= 60 &&
+        ["string", "number", "boolean"].includes(typeof value) &&
+        String(value).length <= 160
+      ).slice(0, 30)
+    );
+    const safeMessages = messages.slice(-8).filter(item =>
+      item && typeof item === "object" &&
+      ["user", "assistant"].includes(item.role) &&
+      typeof item.content === "string"
+    ).map(item => ({ role: item.role, content: item.content.slice(0, 1000) }));
+    const safeLogs = recentLogs.slice(-10).filter(log =>
+      log && typeof log === "object" && !Array.isArray(log)
+    ).map(log => ({
+      date: typeof log.date === "string" ? log.date.slice(0, 40) : "",
+      name: typeof log.name === "string" ? log.name.slice(0, 100) : "",
+      exercises: Array.isArray(log.exercises) ? log.exercises.slice(0, 20).map(exercise => {
+        if (!exercise || typeof exercise !== "object") return null;
+        const clean = {};
+        for (const key of ["name", "sets", "reps", "weight", "duration", "completed"]) {
+          const value = exercise[key];
+          if (["string", "number", "boolean"].includes(typeof value)) clean[key] = typeof value === "string" ? value.slice(0, 100) : value;
+        }
+        return clean;
+      }).filter(Boolean) : []
+    }));
+
+    const safeMessage = typeof message === "string" ? message.slice(0, 2000) : "";
+    const safeEnergy = energy.slice(0, 40);
+    const safeWeekAdjustment = weekAdjustment.slice(0, 40);
+
     if (action !== "chat" && action !== "generate_plan") {
       return {
         statusCode: 400,
@@ -200,31 +243,31 @@ When action is NOT "generate_plan":
         ? `Generate my personalized weekly calisthenics plan now.
 
 Training profile from the onboarding survey:
-${JSON.stringify(profile)}
+${JSON.stringify(safeProfile)}
 
 Recent workout logs:
-${JSON.stringify(recentLogs)}
+${JSON.stringify(safeLogs)}
 
-Current energy: ${JSON.stringify(energy)}
-Weekly adjustment: ${JSON.stringify(weekAdjustment)}
+Current energy: ${JSON.stringify(safeEnergy)}
+Weekly adjustment: ${JSON.stringify(safeWeekAdjustment)}
 
 Follow all equipment, ability, goal, recovery, and session-count rules. Return the actual plan using the required JSON structure.`
         : `Training profile:
-${JSON.stringify(profile)}
+${JSON.stringify(safeProfile)}
 
 Recent workout logs:
-${JSON.stringify(recentLogs)}
+${JSON.stringify(safeLogs)}
 
-Current energy: ${JSON.stringify(energy)}
-Weekly adjustment: ${JSON.stringify(weekAdjustment)}
+Current energy: ${JSON.stringify(safeEnergy)}
+Weekly adjustment: ${JSON.stringify(safeWeekAdjustment)}
 
 Recent conversation:
 ${JSON.stringify(
-  Array.isArray(messages) ? messages.slice(-8) : []
+  safeMessages
 )}
 
 Current question:
-${message}`;
+${safeMessage}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);

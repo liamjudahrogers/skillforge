@@ -1386,12 +1386,21 @@ $("upgradeBtn").onclick=async()=>{
     if(sessionError)throw sessionError;
     if(!session){message.textContent="Please sign in first, then try upgrading.";return;}
     const {data,error}=await supabaseClient.functions.invoke("stripe-checkout");
-    if(error)throw error;
-    if(!data||!data.url)throw new Error("Checkout link was not returned. Please try again.");
+    if(error){
+      let detail="";
+      try{
+        if(error.context && typeof error.context.json==="function"){
+          const payload=await error.context.json();
+          detail=payload?.error || payload?.details || "";
+        }
+      }catch{}
+      throw new Error(detail || error.message || "Checkout service returned an error. Please try again.");
+    }
+    if(!data||!data.url)throw new Error(data?.error||"Checkout link was not returned. Please try again.");
     window.location.assign(data.url);
   }catch(error){
     console.error("Stripe checkout launch failed:",error);
-    message.textContent=error.message||"Couldn't open checkout. Please try again.";
+    message.textContent=error.message||"Could not open checkout. Please try again."
   }finally{
     checkoutInProgress=false;button.disabled=false;button.textContent="Upgrade to Pro";
   }

@@ -1148,7 +1148,37 @@ $("askCoach").onclick=sendCoachMessage;
 $("coachQ").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();sendCoachMessage()}});
 $("updatePlanBtn").onclick=()=>{const feeling=$("weekFeeling").value,sessions=$("weekSessions").value;let mode="steady",msg="Keep the plan steady next week. Aim for consistent attendance and clean technique before increasing difficulty.";if(feeling==="Sore or run-down"||feeling==="Too hard"){mode="easy";msg="Next week will be a lighter week: fewer working sets on most strength exercises. Prioritize sleep, food, and recovery; don't push through pain.";}else if(feeling==="Too easy"&&sessions==="4-5"){mode="progress";msg="You completed most sessions and reported that the work felt easy, so a few selected exercises get a small rep or hold-time increase. Keep form clean and don't add extra sets automatically.";}else if(feeling==="Too easy"){msg="You reported that training felt easy, but consistency comes first. Keep the plan steady until you complete more sessions, then review again.";}state.weekAdjustment=mode;persist();renderDays();renderSession();renderWeek();$("planFeedback").textContent=msg;$("planFeedback").classList.remove("hidden")};
 $("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="skillforge-progress.json";a.click();URL.revokeObjectURL(url)};
-$("resetBtn").onclick=()=>{if(confirm("Clear your saved SkillForge profile and workout history from this browser?")){safeRemove();state={...defaultState};$("dashboard").classList.add("hidden");$("onboarding").classList.remove("hidden");}};
+$("resetBtn").onclick=()=>{
+  const confirmed=confirm(
+    "Reset SkillForge on this browser? This clears the profile, workout history, and settings saved on this device only. It will NOT delete your account or cloud-synced data."
+  );
+  if(!confirmed)return;
+
+  safeRemove();
+  state={...defaultState};
+  clearChat();
+  $("saveMessage").textContent="";
+  $("planFeedback").textContent="";
+  $("planFeedback").classList.add("hidden");
+  $("planError").classList.add("hidden");
+  $("dashboard").classList.add("hidden");
+
+  if(supabaseClient.auth.getSession){
+    supabaseClient.auth.getSession().then(({data:{session}})=>{
+      if(session){
+        $("onboarding").classList.add("hidden");
+        $("authScreen").classList.remove("hidden");
+      }else{
+        $("authScreen").classList.add("hidden");
+        $("onboarding").classList.remove("hidden");
+      }
+    }).catch(error=>{
+      console.error("Could not check login after local reset:",error);
+      $("authScreen").classList.remove("hidden");
+      $("onboarding").classList.add("hidden");
+    });
+  }
+};
 
 async function initializeApp() {
   try {

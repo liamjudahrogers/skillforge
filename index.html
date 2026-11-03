@@ -2543,7 +2543,14 @@ async function initializeApp() {
     }
   } catch (err) {
     console.error("SkillForge startup error:", err);
-    $("authMessage").textContent = "Couldn't check your login. Please refresh.";
+    // Never leave the production app as an empty shell if startup/auth fails.
+    $("dashboard").classList.add("hidden");
+    $("onboarding").classList.add("hidden");
+    $("upgradeModal").classList.add("hidden");
+    $("authScreen").classList.remove("hidden");
+    $("authMessage").classList.remove("hidden");
+    $("authMessage").textContent = "SkillForge couldn't finish loading your account. Check your connection, then try again. If this keeps happening, sign-in configuration may need attention.";
+    $("signOutBtn").hidden = true;
   }
 }
 

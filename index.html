@@ -1409,6 +1409,116 @@ body{background:radial-gradient(ellipse at 12% -8%,rgba(100,155,190,.13),transpa
 #tab-coach>.panel>p:last-child{font-size:.72rem!important;line-height:1.5!important;color:#8192a5}
 @media(max-width:640px){#dashboard .hero{padding:18px}#dashboard .hero h1{font-size:clamp(1.8rem,7.5vw,2.25rem);max-width:18ch}#dashboard .grid3{gap:7px}#dashboard .metric{padding:10px 8px}#dashboard .metric small{font-size:.62rem}#dashboard .metric strong{font-size:1.25rem}#tab-coach>.panel{padding:17px}#tab-coach>.panel>h2{font-size:1.5rem;max-width:20ch}#tab-coach>.panel>p.muted{font-size:.88rem;margin-bottom:18px}#tab-coach .coach-intro{gap:10px;padding:12px 0 15px;margin-bottom:16px}#tab-coach .coach-intro .tag{font-size:.56rem;padding:5px 7px}#tab-coach .suggestions{gap:7px;margin-bottom:16px}#tab-coach .suggestion{font-size:.74rem;padding:8px 11px;min-height:36px}#tab-coach .chat-head{padding:13px 14px}#tab-coach .chat-feed{min-height:180px;max-height:40vh;padding:13px}#tab-coach .chat-compose{padding:13px}#tab-coach #coachQ{min-height:94px;font-size:16px}#tab-coach .chat-actions{align-items:flex-end}#tab-coach .chat-actions small{max-width:26ch}}
 @media(prefers-reduced-motion:reduce){#dashboard *{scroll-behavior:auto;transition:none!important;animation:none!important}}
+
+/* ===== SkillForge: refined liquid-glass minimalism ===== */
+:root{
+  --bg:#080d13;--bg-soft:#0d151e;
+  --panel:rgba(19,30,43,.58);--panel-solid:#111c29;
+  --panel-hover:rgba(32,48,65,.68);
+  --line:rgba(205,226,242,.10);--line-strong:rgba(205,226,242,.18);
+  --text:#f1f6f8;--muted:#9aabba;
+  --blue:#b8f2d5;--blue-strong:#8cdbb8;--blue-soft:rgba(184,242,213,.10);
+  --radius-sm:12px;--radius-md:18px;--radius-lg:24px;--radius-xl:30px;
+  --shadow:0 16px 44px rgba(0,0,0,.20);--glass-blur:22px;
+}
+html{background:var(--bg);scroll-padding-top:24px}
+body{
+ background:radial-gradient(ellipse at 12% -12%,rgba(100,158,171,.13),transparent 34rem),
+ radial-gradient(ellipse at 92% 8%,rgba(101,128,177,.09),transparent 32rem),var(--bg);
+ font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",sans-serif;
+ letter-spacing:-.012em;line-height:1.52;
+}
+main,.container,.app,.shell,.page{width:min(100% - 28px,1000px)}
+h1,h2,h3,h4{letter-spacing:-.045em;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.25rem);font-weight:760}
+h2{font-size:clamp(1.35rem,3vw,2rem);font-weight:720}
+h3{font-size:1.05rem;font-weight:680}
+section,.card,.panel,.history{
+ background:rgba(17,28,41,.48);
+ border:1px solid var(--line);
+ border-radius:var(--radius-lg);
+ box-shadow:0 10px 30px rgba(0,0,0,.10);
+ backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+}
+section,.card,.panel{padding:clamp(18px,3vw,28px);margin-bottom:14px}
+nav{
+ position:relative;gap:5px;padding:6px;border-radius:22px;
+ background:rgba(13,22,32,.72);border:1px solid var(--line);
+ box-shadow:0 12px 34px rgba(0,0,0,.16);
+ backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)
+}
+nav button,[data-tab],.tab-button{
+ min-height:42px;padding:9px 13px;border-radius:15px;
+ color:var(--muted);font-size:.88rem;font-weight:630
+}
+nav button.active,[data-tab].active,.tab-button.active,nav button[aria-selected="true"]{
+ color:#071510;background:var(--blue);box-shadow:0 0 22px rgba(184,242,213,.10)
+}
+button.primary,button[type="submit"],.primary,.btn-primary{
+ border-radius:15px;background:linear-gradient(135deg,#c7f5df,#9de4c5);
+ color:#071510;border:1px solid rgba(220,255,239,.4);box-shadow:0 6px 20px rgba(111,210,165,.10)
+}
+button.secondary,.secondary,.btn-secondary{
+ border-radius:14px;background:rgba(255,255,255,.045);border:1px solid var(--line-strong)
+}
+input,select,textarea{
+ min-width:0;max-width:100%;border-radius:13px;background:rgba(7,14,22,.62);
+ border:1px solid var(--line-strong);color:var(--text)
+}
+input:focus,select:focus,textarea:focus{border-color:rgba(184,242,213,.55);box-shadow:0 0 0 3px rgba(184,242,213,.08)}
+/* Coach: prevent the clipped/overflowing layout and give the conversation room */
+#coach,#aiCoach,.coach-container,.coach-shell,.chat-shell{
+ min-width:0;max-width:100%;overflow:visible
+}
+#coachQ,#coachFeed,#chatFeed,.chat-feed,.coach-conversation{
+ min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal
+}
+#coachQ{
+ display:block;width:100%;max-width:100%;min-height:104px;height:auto;
+ resize:vertical;line-height:1.55;white-space:pre-wrap
+}
+#chatFeed,.chat-feed,.coach-conversation{
+ display:flex;flex-direction:column;gap:12px;max-height:min(52vh,560px);
+ overflow-y:auto;overflow-x:hidden;padding:14px 2px;scrollbar-gutter:stable
+}
+.chat-msg{
+ max-width:min(88%,680px);min-width:0;padding:13px 16px;
+ border:1px solid var(--line);border-radius:18px;
+ background:rgba(255,255,255,.045);line-height:1.62;overflow-wrap:anywhere
+}
+.chat-msg.user{align-self:flex-end;background:rgba(184,242,213,.09);border-color:rgba(184,242,213,.16);border-bottom-right-radius:6px}
+.chat-msg.assistant{align-self:flex-start;border-bottom-left-radius:6px}
+.coach-actions,.chat-actions,[data-prompt]{
+ display:flex;flex-wrap:wrap;gap:8px;min-width:0
+}
+.coach-actions button,[data-prompt]{
+ min-height:38px;padding:8px 12px;border-radius:999px;font-size:.84rem
+}
+#askCoach,.chat-send,.coach-send{flex:0 0 auto;min-width:44px;min-height:44px;border-radius:50%}
+.coach-composer,.chat-compose{
+ display:flex;align-items:flex-end;gap:10px;min-width:0
+}
+.coach-composer>* , .chat-compose>*{min-width:0}
+.coach-composer textarea,.chat-compose textarea{flex:1;width:100%}
+#coachCharCount{font-variant-numeric:tabular-nums;white-space:nowrap}
+#upgradeModal .upgrade-card{max-width:480px;border-radius:26px;background:rgba(17,28,41,.94);backdrop-filter:blur(26px)}
+/* Fixed navigation should respect iOS safe areas and never cover content */
+.bottom-nav,[class*="bottom-nav"]{
+ padding-bottom:calc(8px + env(safe-area-inset-bottom))
+}
+body{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+:focus-visible{outline-color:var(--blue)}
+@media(max-width:640px){
+ main,.container,.app,.shell,.page{width:calc(100% - 20px)}
+ section,.card,.panel{padding:17px;border-radius:20px}
+ nav{gap:4px;padding:5px;border-radius:18px}
+ nav button,[data-tab],.tab-button{padding:8px 7px;font-size:.8rem;min-width:0}
+ .chat-msg{max-width:94%}
+ #chatFeed,.chat-feed,.coach-conversation{max-height:48vh;padding-inline:0}
+ .coach-composer,.chat-compose{gap:8px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
